@@ -1,0 +1,10 @@
+{
+  "domain": "aurora_solar",
+  "name": "Aurora Solar Inverter",
+  "documentation": "https://github.com/dein_benutzername/aurora_solar_integration",
+  "dependencies": [],
+  "codeowners": ["@dein_benutzername"],
+  "requirements": [],
+  "iot_class": "local_polling",
+  "version": "0.1.0"
+}
