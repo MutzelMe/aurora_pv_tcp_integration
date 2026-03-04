@@ -52,10 +52,34 @@ COMMANDS = {
     "DSP_RELAY_STATUS": b"\x60\x33\x0D",       # Relais-Status
 }
 
+# Mapping für lesbare Texte
+ALARM_MESSAGES = {
+    0x0000: "Keine Alarme",
+    0x0001: "Überlastung",
+    0x0002: "Netzspannung zu hoch",
+    0x0004: "Isolationsfehler",
+    0x0008: "Temperatur zu hoch",
+    0x0010: "Netzfrequenz außer Toleranz",
+}
+
+STATUS_MESSAGES = {
+    0x00: "Aus",
+    0x01: "Bereit",
+    0x02: "Eingeschaltet",
+    0x03: "Fehler",
+    0x04: "Wartung",
+}
+
+FAULT_MESSAGES = {
+    0x0000: "Kein Fehler",
+    0x0001: "Kurzschluss",
+    0x0002: "Kommunikationsfehler",
+}
+
 class AuroraSensorBase(SensorEntity):
     """Basis-Klasse für alle ABB Aurora Sensoren."""
 
-    def __init__(self, host, port, slave_id, name, command_key, unit, data_index=0, factor=1, is_string=False):
+    def __init__(self, host, port, slave_id, name, command_key, unit, data_index=0, factor=1, is_string=False, text_mapping=None):
         """Initialisiere den Sensor."""
         self._host = host
         self._port = port
@@ -65,7 +89,8 @@ class AuroraSensorBase(SensorEntity):
         self._unit = unit
         self._data_index = data_index
         self._factor = factor
-        self._is_string = is_string  # Für Seriennummern/Modell
+        self._is_string = is_string
+        self._text_mapping = text_mapping  # Für lesbare Texte
         self._state = None
         self._attr_native_unit_of_measurement = unit if not is_string else None
         self._attr_unique_id = f"aurora_{slave_id}_{command_key.lower()}"
@@ -87,10 +112,10 @@ class AuroraSensorBase(SensorEntity):
                     if self._is_string:
                         # Seriennummer/Modell als String
                         self._state = response[self._data_index:].decode('ascii').strip()
-                    elif self._command in (bytes([self._slave_id]) + COMMANDS["DSP_ALARMS"],
-                                          bytes([self._slave_id]) + COMMANDS["DSP_FAULT_CODE"]):
-                        # Alarme/Fehler als Hex oder Code
-                        self._state = f"0x{response[:2].hex()}"
+                    elif self._text_mapping:
+                        # Alarme/Status/Fehler als lesbarer Text
+                        raw_value = int.from_bytes(response[:2], byteorder='little', signed=False)
+                        self._state = self._text_mapping.get(raw_value, f"Unbekannt (0x{raw_value:04X})")
                     else:
                         # Standardwerte (Integer mit Skalierung)
                         self._state = int.from_bytes(
@@ -135,9 +160,18 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         AuroraSensorBase(host, port, slave_id, name, "DSP_AMBIENT_TEMP", "°C"),
 
         # Diagnose (wichtig!)
-        AuroraSensorBase(host, port, slave_id, name, "DSP_ALARMS", "", is_string=False),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FAULT_CODE", "", is_string=False),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_STATUS", "", is_string=False),
+        AuroraSensorBase(
+            host, port, slave_id, name, "DSP_ALARMS", "",
+            text_mapping=ALARM_MESSAGES
+        ),
+        AuroraSensorBase(
+            host, port, slave_id, name, "DSP_FAULT_CODE", "",
+            text_mapping=FAULT_MESSAGES
+        ),
+        AuroraSensorBase(
+            host, port, slave_id, name, "DSP_STATUS", "",
+            text_mapping=STATUS_MESSAGES
+        ),
         AuroraSensorBase(host, port, slave_id, name, "DSP_EVENTS", "", is_string=False),
         AuroraSensorBase(host, port, slave_id, name, "DSP_LAST_ERROR", "", is_string=False),
 
