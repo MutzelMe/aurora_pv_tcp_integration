@@ -3,6 +3,7 @@ from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import CONF_HOST, CONF_PORT
 import logging
 from aurorapy.client import AuroraTCPClient, AuroraError
+import time
 
 from .const import DOMAIN, CONF_SLAVE_ID
 
@@ -31,6 +32,21 @@ FAULT_MESSAGES = {
     0x0001: "Kurzschluss",
     0x0002: "Kommunikationsfehler",
 }
+
+def measure_with_retry(client, code, retries=2):
+    """Versucht, einen Wert mit Wiederholungen bei Timeout zu lesen."""
+    for attempt in range(retries + 1):
+        try:
+            value = client.measure(code)
+            if (abs(value) < 1e-30 and value != 0.0) or abs(value) > 1e10:
+                return None
+            return value
+        except AuroraError as e:
+            if "Reading Timeout" in str(e) and attempt < retries:
+                time.sleep(1)
+                continue
+            return None
+    return None
 
 class AuroraSensorBase(SensorEntity):
     """Basis-Klasse für alle ABB Aurora Sensoren."""
@@ -63,60 +79,198 @@ class AuroraSensorBase(SensorEntity):
             client.connect()
 
             if self._sensor_type == "DSP_GRID_POWER":
-                self._state = round(client.measure(3) * self._factor, self._precision)
+                value = measure_with_retry(client, 3)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_DAILY_ENERGY":
                 self._state = round(client.cumulated_energy(0), self._precision)
             elif self._sensor_type == "DSP_TOTAL_ENERGY":
                 self._state = round(client.cumulated_energy(1) * 0.1, self._precision)
             elif self._sensor_type == "DSP_GRID_VOLTAGE":
-                self._state = round(client.measure(6), self._precision)
+                value = measure_with_retry(client, 1)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_GRID_CURRENT":
-                self._state = round(client.measure(7), self._precision)
+                value = measure_with_retry(client, 2)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_GRID_FREQUENCY":
-                self._state = round(client.measure(8), self._precision)
+                value = measure_with_retry(client, 4)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_PF":
-                self._state = round(client.measure(9) * 0.01, self._precision)
+                value = measure_with_retry(client, 9)
+                self._state = round(value * 0.01, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_DC_VOLTAGE":
-                self._state = round(client.measure(10), self._precision)
+                value = measure_with_retry(client, 23)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_DC_CURRENT":
-                self._state = round(client.measure(11), self._precision)
+                value = measure_with_retry(client, 25)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_DC_POWER":
-                self._state = round(client.measure(12), self._precision)
+                value = measure_with_retry(client, 12)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_TEMPERATURE":
-                self._state = round(client.measure(13), self._precision)
+                value = measure_with_retry(client, 21)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_RADIATOR_TEMP":
-                self._state = round(client.measure(14), self._precision)
+                value = measure_with_retry(client, 22)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_AMBIENT_TEMP":
-                self._state = round(client.measure(15), self._precision)
+                value = measure_with_retry(client, 15)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_MPPT_POWER":
-                self._state = round(client.measure(16), self._precision)
+                value = measure_with_retry(client, 16)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_ISOLATION":
-                self._state = round(client.measure(17), self._precision)
+                value = measure_with_retry(client, 30)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_OPERATING_HOURS":
-                self._state = round(client.measure(18), self._precision)
+                value = measure_with_retry(client, 18)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_SERIAL_NUMBER":
                 self._state = client.serial_number()
             elif self._sensor_type == "DSP_VERSION":
                 self._state = client.version()
             elif self._sensor_type == "DSP_MODEL":
-                self._state = client.version()  # Annahme: Modell wird über version() abgefragt
+                self._state = client.version()
             elif self._sensor_type == "DSP_EVENTS":
-                # Annahme: Ereignisse werden über measure(21) abgefragt
-                events = client.measure(21)
-                self._state = events  # oder passende Textzuordnung
+                events = measure_with_retry(client, 21)
+                self._state = events
             elif self._sensor_type == "DSP_LAST_ERROR":
-                # Annahme: Letzter Fehler wird über measure(22) abgefragt
-                last_error = client.measure(22)
-                self._state = last_error  # oder passende Textzuordnung
+                last_error = measure_with_retry(client, 22)
+                self._state = last_error
             elif self._sensor_type == "DSP_ALARMS":
-                alarms = client.measure(19)
-                self._state = self._text_mapping.get(alarms, "Unbekannt")
+                alarms = measure_with_retry(client, 19)
+                self._state = self._text_mapping.get(int(alarms), "Unbekannt") if alarms is not None else "Unbekannt"
             elif self._sensor_type == "DSP_FAULT_CODE":
-                fault = client.measure(20)
-                self._state = self._text_mapping.get(fault, "Unbekannt")
+                fault = measure_with_retry(client, 20)
+                self._state = self._text_mapping.get(int(fault), "Unbekannt") if fault is not None else "Unbekannt"
             elif self._sensor_type == "DSP_STATUS":
-                status = client.measure(23)  # Annahme: Status wird über measure(23) abgefragt
-                self._state = self._text_mapping.get(status, "Unbekannt")
+                status = measure_with_retry(client, 23)
+                self._state = self._text_mapping.get(int(status), "Unbekannt") if status is not None else "Unbekannt"
+            elif self._sensor_type == "DSP_INPUT_2_VOLTAGE":
+                value = measure_with_retry(client, 26)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_INPUT_2_CURRENT":
+                value = measure_with_retry(client, 27)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_VBULK":
+                value = measure_with_retry(client, 5)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_ILEAK_DC_DC":
+                value = measure_with_retry(client, 6)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_ILEAK_INVERTER":
+                value = measure_with_retry(client, 7)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_PIN1":
+                value = measure_with_retry(client, 8)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_PIN2":
+                value = measure_with_retry(client, 9)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_GRID_VOLTAGE_DC_DC":
+                value = measure_with_retry(client, 28)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_GRID_FREQUENCY_DC_DC":
+                value = measure_with_retry(client, 29)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_VBULK_DC_DC":
+                value = measure_with_retry(client, 31)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_AVERAGE_GRID_VOLTAGE":
+                value = measure_with_retry(client, 32)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_VBULK_MID":
+                value = measure_with_retry(client, 33)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_POWER_PEAK":
+                value = measure_with_retry(client, 34)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_POWER_PEAK_TODAY":
+                value = measure_with_retry(client, 35)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_GRID_VOLTAGE_NEUTRAL":
+                value = measure_with_retry(client, 36)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_WIND_GENERATOR_FREQUENCY":
+                value = measure_with_retry(client, 37)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_GRID_VOLTAGE_NEUTRAL_PHASE":
+                value = measure_with_retry(client, 38)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_GRID_CURRENT_PHASE_R":
+                value = measure_with_retry(client, 39)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_GRID_CURRENT_PHASE_S":
+                value = measure_with_retry(client, 40)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_GRID_CURRENT_PHASE_T":
+                value = measure_with_retry(client, 41)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_FREQUENCY_PHASE_R":
+                value = measure_with_retry(client, 42)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_FREQUENCY_PHASE_S":
+                value = measure_with_retry(client, 43)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_FREQUENCY_PHASE_T":
+                value = measure_with_retry(client, 44)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_VBULK_PLUS":
+                value = measure_with_retry(client, 45)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_VBULK_MINUS":
+                value = measure_with_retry(client, 46)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_SUPERVISOR_TEMPERATURE":
+                value = measure_with_retry(client, 47)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_ALIM_TEMPERATURE":
+                value = measure_with_retry(client, 48)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_HEAT_SINK_TEMPERATURE":
+                value = measure_with_retry(client, 49)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_TEMPERATURE_1":
+                value = measure_with_retry(client, 50)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_TEMPERATURE_2":
+                value = measure_with_retry(client, 51)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_TEMPERATURE_3":
+                value = measure_with_retry(client, 52)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_FAN_1_SPEED":
+                value = measure_with_retry(client, 53)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_FAN_2_SPEED":
+                value = measure_with_retry(client, 54)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_FAN_3_SPEED":
+                value = measure_with_retry(client, 55)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_FAN_4_SPEED":
+                value = measure_with_retry(client, 56)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_FAN_5_SPEED":
+                value = measure_with_retry(client, 57)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_POWER_SATURATION_LIMIT":
+                value = measure_with_retry(client, 58)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_RIFERIMENTO_ANELLO_BULK":
+                value = measure_with_retry(client, 59)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_VPANEL_MICRO":
+                value = measure_with_retry(client, 60)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_GRID_VOLTAGE_PHASE_R":
+                value = measure_with_retry(client, 61)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_GRID_VOLTAGE_PHASE_S":
+                value = measure_with_retry(client, 62)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
+            elif self._sensor_type == "DSP_GRID_VOLTAGE_PHASE_T":
+                value = measure_with_retry(client, 63)
+                self._state = round(value * self._factor, self._precision) if value is not None else None
 
             client.close()
         except AuroraError as e:
@@ -139,20 +293,20 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_POWER", "W", factor=1, precision=2),
         AuroraSensorBase(host, port, slave_id, name, "DSP_DAILY_ENERGY", "Wh", precision=0),
         AuroraSensorBase(host, port, slave_id, name, "DSP_TOTAL_ENERGY", "kWh", factor=0.1, precision=2),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE", "V", precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT", "A", precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_FREQUENCY", "Hz", precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_PF", "", factor=0.01, precision=2),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT", "A", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_FREQUENCY", "Hz", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_PF", "", factor=1, precision=2),
 
         # Gleichstromkreis
-        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_VOLTAGE", "V", precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_CURRENT", "A", precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_POWER", "W", precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_VOLTAGE", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_CURRENT", "A", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_POWER", "W", factor=1, precision=0),
 
         # Temperatur und Umwelt
-        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE", "°C", precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_RADIATOR_TEMP", "°C", precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_AMBIENT_TEMP", "°C", precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE", "°C", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_RADIATOR_TEMP", "°C", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_AMBIENT_TEMP", "°C", factor=1, precision=1),
 
         # Diagnose (wichtig!)
         AuroraSensorBase(host, port, slave_id, name, "DSP_ALARMS", "", text_mapping=ALARM_MESSAGES),
@@ -167,7 +321,87 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         AuroraSensorBase(host, port, slave_id, name, "DSP_VERSION", "", is_string=True),
 
         # Erweiterte Diagnose
-        AuroraSensorBase(host, port, slave_id, name, "DSP_ISOLATION", "kΩ", precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_OPERATING_HOURS", "h", precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_ISOLATION", "kΩ", factor=1, precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_OPERATING_HOURS", "h", factor=1, precision=0),
+
+        # Input 2
+        AuroraSensorBase(host, port, slave_id, name, "DSP_INPUT_2_VOLTAGE", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_INPUT_2_CURRENT", "A", factor=1, precision=1),
+
+        # Vbulk
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK", "V", factor=1, precision=1),
+
+        # Leckströme
+        AuroraSensorBase(host, port, slave_id, name, "DSP_ILEAK_DC_DC", "A", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_ILEAK_INVERTER", "A", factor=1, precision=1),
+
+        # Pins
+        AuroraSensorBase(host, port, slave_id, name, "DSP_PIN1", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_PIN2", "V", factor=1, precision=1),
+
+        # DC/DC
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_DC_DC", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_FREQUENCY_DC_DC", "Hz", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_DC_DC", "V", factor=1, precision=1),
+
+        # Durchschnittliche Netzspannung
+        AuroraSensorBase(host, port, slave_id, name, "DSP_AVERAGE_GRID_VOLTAGE", "V", factor=1, precision=1),
+
+        # Vbulk Mid
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_MID", "V", factor=1, precision=1),
+
+        # Leistungsspitzen
+        AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_PEAK", "W", factor=1, precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_PEAK_TODAY", "W", factor=1, precision=0),
+
+        # Neutralleiter
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_NEUTRAL", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_NEUTRAL_PHASE", "V", factor=1, precision=1),
+
+        # Windgenerator
+        AuroraSensorBase(host, port, slave_id, name, "DSP_WIND_GENERATOR_FREQUENCY", "Hz", factor=1, precision=1),
+
+        # Phasenströme
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_R", "A", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_S", "A", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_T", "A", factor=1, precision=1),
+
+        # Phasenfrequenzen
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_R", "Hz", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_S", "Hz", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_T", "Hz", factor=1, precision=1),
+
+        # Vbulk Plus/Minus
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_PLUS", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_MINUS", "V", factor=1, precision=1),
+
+        # Temperaturen
+        AuroraSensorBase(host, port, slave_id, name, "DSP_SUPERVISOR_TEMPERATURE", "°C", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_ALIM_TEMPERATURE", "°C", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_HEAT_SINK_TEMPERATURE", "°C", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE_1", "°C", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE_2", "°C", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE_3", "°C", factor=1, precision=1),
+
+        # Lüftergeschwindigkeiten
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_1_SPEED", "rpm", factor=1, precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_2_SPEED", "rpm", factor=1, precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_3_SPEED", "rpm", factor=1, precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_4_SPEED", "rpm", factor=1, precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_5_SPEED", "rpm", factor=1, precision=0),
+
+        # Leistungssättigungsgrenze
+        AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_SATURATION_LIMIT", "W", factor=1, precision=0),
+
+        # Riferimento Anello Bulk
+        AuroraSensorBase(host, port, slave_id, name, "DSP_RIFERIMENTO_ANELLO_BULK", "", factor=1, precision=1),
+
+        # Vpanel Micro
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VPANEL_MICRO", "V", factor=1, precision=1),
+
+        # Phasenspannungen
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_R", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_S", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_T", "V", factor=1, precision=1),
     ]
     add_entities(sensors, True)
