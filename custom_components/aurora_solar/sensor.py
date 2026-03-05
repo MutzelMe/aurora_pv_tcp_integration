@@ -56,7 +56,9 @@ class AuroraSensorBase(SensorEntity):
         self._host = host
         self._port = port
         self._slave_id = slave_id
-        self._name = f"{name} {sensor_type.split('_')[-1].title()}"
+        """self._name = f"{name} {sensor_type.split('_')[-1].title()}"""
+        self._name = f"Wechselrichter {slave_id} - {sensor_type.split('_')[-1].lower()}"
+        self._attr_friendly_name = f"Wechselrichter {slave_id} - {sensor_type.split('_')[-1].lower()}"
         self._sensor_type = sensor_type
         self._unit = unit
         self._factor = factor
@@ -66,6 +68,32 @@ class AuroraSensorBase(SensorEntity):
         self._state = None
         self._attr_native_unit_of_measurement = unit if not is_string else None
         self._attr_unique_id = f"aurora_{slave_id}_{sensor_type.lower()}"
+        self._attr_icon = self._get_icon_for_sensor_type(sensor_type)
+
+    def _get_icon_for_sensor_type(self, sensor_type):
+        """Gibt das passende Icon für den Sensor-Typ zurück."""
+        icon_mapping = {
+            "DSP_GRID_POWER": "mdi:solar-power",
+            "DSP_DC_POWER": "mdi:solar-power",
+            "DSP_MPPT_POWER": "mdi:solar-power",
+            "DSP_POWER_PEAK": "mdi:solar-power",
+            "DSP_PIN1": "mdi:solar-power",
+            "DSP_PIN2": "mdi:solar-power",
+            "DSP_POWER_PEAK_TODAY": "mdi:solar-power",   
+            "DSP_DAILY_ENERGY": "mdi:solar-power-variant",
+            "DSP_TOTAL_ENERGY": "mdi:counter",
+            "DSP_GRID_VOLTAGE": "mdi:flash",
+            "DSP_AVERAGE_GRID_VOLTAGE": "mdi:flash",
+            "DSP_GRID_CURRENT": "mdi:current-ac",
+            "DSP_DC_VOLTAGE": "mdi:flash-outline",
+            "DSP_DC_CURRENT": "mdi:current-dc",
+            "DSP_TEMPERATURE": "mdi:thermometer",
+            "DSP_ALARMS": "mdi:alert",
+            "DSP_STATUS": "mdi:information",
+            "DSP_FAULT_CODE": "mdi:alert-circle",
+        }
+        return icon_mapping.get(sensor_type, "mdi:help")
+
 
     @property
     def state(self):
@@ -75,7 +103,7 @@ class AuroraSensorBase(SensorEntity):
     def update(self):
         """Aktualisiere die Sensordaten."""
         try:
-            client = AuroraTCPClient(ip=self._host, port=self._port, address=self._slave_id, timeout=10)
+            client = AuroraTCPClient(ip=self._host, port=self._port, address=self._slave_id, timeout=20)
             client.connect()
 
             if self._sensor_type == "DSP_GRID_POWER":
@@ -336,8 +364,8 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         AuroraSensorBase(host, port, slave_id, name, "DSP_ILEAK_INVERTER", "A", factor=1, precision=1),
 
         # Pins
-        AuroraSensorBase(host, port, slave_id, name, "DSP_PIN1", "V", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_PIN2", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_PIN1", "W", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_PIN2", "W", factor=1, precision=1),
 
         # DC/DC
         AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_DC_DC", "V", factor=1, precision=1),
