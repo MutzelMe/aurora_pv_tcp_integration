@@ -24,14 +24,29 @@ DATA_SCHEMA = vol.Schema(
 )
 
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
-    """Prüfe, ob die Verbindung zum Wechselrichter möglich ist."""
-    # Hier könntest du eine Verbindungstest-Logik einbauen (z. B. mit `AuroraTCPClient`).
-    # Falls der Test fehlschlägt, wirf eine Exception:
-    # if not await test_connection(data[CONF_HOST], data[CONF_PORT], data[CONF_SLAVE_ID]):
-    #     raise CannotConnect
-    return {"title": f"Wechselrichter {data[CONF_SLAVE_ID]}"}
+    """Prüft, ob die Verbindung zum Wechselrichter möglich ist."""
+    try:
+        # Verbindung herstellen
+        client = AuroraTCPClient(
+            ip=data[CONF_HOST],
+            port=data[CONF_PORT],
+            address=data[CONF_SLAVE_ID],
+            timeout=10
+        )
+        # Verbindungstest im Executor ausführen (asynchron)
+        await hass.async_add_executor_job(client.connect)
+        # Beispiel: Seriennummer abfragen, um die Verbindung zu bestätigen
+        serial_number = await hass.async_add_executor_job(client.get_serial_number)
+        await hass.async_add_executor_job(client.close)
+        # Erfolg: Titel mit Seriennummer zurückgeben
+        return {"title": f"Wechselrichter {data[CONF_SLAVE_ID]} (SN: {serial_number})"}
 
-class CannotConnect(HomeAssistantError):
+    except AuroraError as e:
+        _LOGGER.error("Verbindungsfehler zum Wechselrichter: %s", str(e))
+        raise config_entries.ConfigFlowError("cannot_connect") from e
+    except Exception as e:
+        _LOGGER.exception("Unbekannter Fehler bei der Verbindung")
+        raise config_entries.ConfigFlowError("unknown") from eclass CannotConnect(HomeAssistantError):
     """Error to indicate we cannot connect to the inverter."""
 
 class AuroraSolarConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
