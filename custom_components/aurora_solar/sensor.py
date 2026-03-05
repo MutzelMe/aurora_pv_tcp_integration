@@ -35,7 +35,7 @@ FAULT_MESSAGES = {
 class AuroraSensorBase(SensorEntity):
     """Basis-Klasse für alle ABB Aurora Sensoren."""
 
-    def __init__(self, host, port, slave_id, name, sensor_type, unit, factor=1, is_string=False, text_mapping=None):
+    def __init__(self, host, port, slave_id, name, sensor_type, unit, factor=1, precision=2, is_string=False, text_mapping=None):
         """Initialisiere den Sensor."""
         self._host = host
         self._port = port
@@ -44,6 +44,7 @@ class AuroraSensorBase(SensorEntity):
         self._sensor_type = sensor_type
         self._unit = unit
         self._factor = factor
+        self._precision = precision
         self._is_string = is_string
         self._text_mapping = text_mapping
         self._state = None
@@ -62,57 +63,68 @@ class AuroraSensorBase(SensorEntity):
             client.connect()
 
             if self._sensor_type == "DSP_GRID_POWER":
-                self._state = client.measure(3) * self._factor
+                self._state = round(client.measure(3) * self._factor, self._precision)
             elif self._sensor_type == "DSP_DAILY_ENERGY":
-                self._state = client.cumulated_energy(0)
+                self._state = round(client.cumulated_energy(0), self._precision)
             elif self._sensor_type == "DSP_TOTAL_ENERGY":
-                self._state = client.cumulated_energy(1) * 0.1
+                self._state = round(client.cumulated_energy(1) * 0.1, self._precision)
             elif self._sensor_type == "DSP_GRID_VOLTAGE":
-                self._state = client.measure(6)
+                self._state = round(client.measure(6), self._precision)
             elif self._sensor_type == "DSP_GRID_CURRENT":
-                self._state = client.measure(7)
+                self._state = round(client.measure(7), self._precision)
             elif self._sensor_type == "DSP_GRID_FREQUENCY":
-                self._state = client.measure(8)
+                self._state = round(client.measure(8), self._precision)
             elif self._sensor_type == "DSP_PF":
-                self._state = client.measure(9) * 0.01
+                self._state = round(client.measure(9) * 0.01, self._precision)
             elif self._sensor_type == "DSP_DC_VOLTAGE":
-                self._state = client.measure(10)
+                self._state = round(client.measure(10), self._precision)
             elif self._sensor_type == "DSP_DC_CURRENT":
-                self._state = client.measure(11)
+                self._state = round(client.measure(11), self._precision)
             elif self._sensor_type == "DSP_DC_POWER":
-                self._state = client.measure(12)
+                self._state = round(client.measure(12), self._precision)
             elif self._sensor_type == "DSP_TEMPERATURE":
-                self._state = client.measure(13)
+                self._state = round(client.measure(13), self._precision)
             elif self._sensor_type == "DSP_RADIATOR_TEMP":
-                self._state = client.measure(14)
+                self._state = round(client.measure(14), self._precision)
             elif self._sensor_type == "DSP_AMBIENT_TEMP":
-                self._state = client.measure(15)
+                self._state = round(client.measure(15), self._precision)
             elif self._sensor_type == "DSP_MPPT_POWER":
-                self._state = client.measure(16)
+                self._state = round(client.measure(16), self._precision)
             elif self._sensor_type == "DSP_ISOLATION":
-                self._state = client.measure(17)
+                self._state = round(client.measure(17), self._precision)
             elif self._sensor_type == "DSP_OPERATING_HOURS":
-                self._state = client.measure(18)
+                self._state = round(client.measure(18), self._precision)
             elif self._sensor_type == "DSP_SERIAL_NUMBER":
                 self._state = client.serial_number()
             elif self._sensor_type == "DSP_VERSION":
                 self._state = client.version()
             elif self._sensor_type == "DSP_MODEL":
-                self._state = client.model()
+                self._state = client.version()  # Annahme: Modell wird über version() abgefragt
+            elif self._sensor_type == "DSP_EVENTS":
+                # Annahme: Ereignisse werden über measure(21) abgefragt
+                events = client.measure(21)
+                self._state = events  # oder passende Textzuordnung
+            elif self._sensor_type == "DSP_LAST_ERROR":
+                # Annahme: Letzter Fehler wird über measure(22) abgefragt
+                last_error = client.measure(22)
+                self._state = last_error  # oder passende Textzuordnung
             elif self._sensor_type == "DSP_ALARMS":
-                alarms = client.alarms()
-                self._state = self._text_mapping.get(alarms, f"Unbekannt (0x{alarms:04X})")
-            elif self._sensor_type == "DSP_STATUS":
-                status = client.status()
-                self._state = self._text_mapping.get(status, f"Unbekannt (0x{status:04X})")
+                alarms = client.measure(19)
+                self._state = self._text_mapping.get(alarms, "Unbekannt")
             elif self._sensor_type == "DSP_FAULT_CODE":
-                fault = client.fault_code()
-                self._state = self._text_mapping.get(fault, f"Unbekannt (0x{fault:04X})")
+                fault = client.measure(20)
+                self._state = self._text_mapping.get(fault, "Unbekannt")
+            elif self._sensor_type == "DSP_STATUS":
+                status = client.measure(23)  # Annahme: Status wird über measure(23) abgefragt
+                self._state = self._text_mapping.get(status, "Unbekannt")
 
             client.close()
         except AuroraError as e:
             self._state = None
             _LOGGER.error("Fehler bei %s: %s", self._name, e)
+        except Exception as e:
+            self._state = None
+            _LOGGER.error("Allgemeiner Fehler bei %s: %s", self._name, e)
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Richte ALLE ABB Aurora Sensoren ein."""
@@ -124,29 +136,30 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     # Erstelle alle Sensoren für diesen Wechselrichter
     sensors = [
         # Leistung und Energie
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_POWER", "W"),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_DAILY_ENERGY", "Wh"),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_TOTAL_ENERGY", "kWh", factor=0.1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE", "V"),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT", "A"),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_FREQUENCY", "Hz"),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_PF", "", 0, 0.01),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_POWER", "W", factor=1, precision=2),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DAILY_ENERGY", "Wh", precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TOTAL_ENERGY", "kWh", factor=0.1, precision=2),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE", "V", precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT", "A", precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_FREQUENCY", "Hz", precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_PF", "", factor=0.01, precision=2),
 
         # Gleichstromkreis
-        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_VOLTAGE", "V"),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_CURRENT", "A"),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_POWER", "W"),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_MPPT_POWER", "W"),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_VOLTAGE", "V", precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_CURRENT", "A", precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_POWER", "W", precision=0),
 
         # Temperatur und Umwelt
-        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE", "°C"),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_RADIATOR_TEMP", "°C"),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_AMBIENT_TEMP", "°C"),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE", "°C", precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_RADIATOR_TEMP", "°C", precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_AMBIENT_TEMP", "°C", precision=1),
 
         # Diagnose (wichtig!)
         AuroraSensorBase(host, port, slave_id, name, "DSP_ALARMS", "", text_mapping=ALARM_MESSAGES),
         AuroraSensorBase(host, port, slave_id, name, "DSP_FAULT_CODE", "", text_mapping=FAULT_MESSAGES),
         AuroraSensorBase(host, port, slave_id, name, "DSP_STATUS", "", text_mapping=STATUS_MESSAGES),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_EVENTS", ""),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_LAST_ERROR", ""),
 
         # Seriennummern und Modell (als String)
         AuroraSensorBase(host, port, slave_id, name, "DSP_SERIAL_NUMBER", "", is_string=True),
@@ -154,7 +167,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         AuroraSensorBase(host, port, slave_id, name, "DSP_VERSION", "", is_string=True),
 
         # Erweiterte Diagnose
-        AuroraSensorBase(host, port, slave_id, name, "DSP_ISOLATION", "kΩ"),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_OPERATING_HOURS", "h"),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_ISOLATION", "kΩ", precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_OPERATING_HOURS", "h", precision=0),
     ]
     add_entities(sensors, True)
