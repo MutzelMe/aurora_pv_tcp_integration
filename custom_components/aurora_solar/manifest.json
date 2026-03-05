@@ -1,14 +1,13 @@
 {
   "domain": "aurora_solar_tcp",
   "name": "Aurora Solar Inverter via TCP",
-  "documentation": "http://gitea.internal/kai/aurora_pv_tcp_integration",
-  "issues": "http://gitea.internal/kai/aurora_pv_tcp_integration/issues",
+  "documentation": "https://github.com/MutzelMe/aurora_pv_tcp_integration",
+  "issues": "https://github.com/MutzelMe/aurora_pv_tcp_integration/issues",
   "dependencies": [],
-  "codeowners": ["@kai"],
+  "codeowners": ["@MutzelMe"],
   "requirements": ["aurorapy>=0.2.7"],
   "version": "0.1.0",
   "iot_class": "local_polling",
   "config_flow": true,
-  "icon": "abb_tcp.png",
-  "version": "0.1.0"
+  "icon": "abb_tcp.png"
 }
