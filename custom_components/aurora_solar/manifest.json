@@ -1,5 +1,5 @@
 {
-  "domain": "aurora_solar_tcp",
+  "domain": "aurora_solar",
   "name": "Aurora Solar Inverter via TCP",
   "documentation": "https://github.com/MutzelMe/aurora_pv_tcp_integration",
   "issues": "https://github.com/MutzelMe/aurora_pv_tcp_integration/issues",
