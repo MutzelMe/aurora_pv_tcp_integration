@@ -1,4 +1,4 @@
-DOMAIN = "aurora_solar_tcp"
+DOMAIN = "aurora_solar"
 CONF_HOST = "host"
 CONF_PORT = "port"
 CONF_SLAVE_ID = "slave_id"
