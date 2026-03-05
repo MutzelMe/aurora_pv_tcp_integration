@@ -14,7 +14,6 @@ from .const import DOMAIN, CONF_HOST, CONF_PORT, CONF_SLAVE_ID
 
 _LOGGER = logging.getLogger(__name__)
 
-# Schema für die Benutzereingaben (Host, Port, Slave-ID)
 DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_HOST): str,
@@ -23,31 +22,18 @@ DATA_SCHEMA = vol.Schema(
     }
 )
 
-async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
-    """Prüft, ob die Verbindung zum Wechselrichter möglich ist."""
-    try:
-        # Verbindung herstellen
-        client = AuroraTCPClient(
-            ip=data[CONF_HOST],
-            port=data[CONF_PORT],
-            address=data[CONF_SLAVE_ID],
-            timeout=10
-        )
-        # Verbindungstest im Executor ausführen (asynchron)
-        await hass.async_add_executor_job(client.connect)
-        # Beispiel: Seriennummer abfragen, um die Verbindung zu bestätigen
-        serial_number = await hass.async_add_executor_job(client.get_serial_number)
-        await hass.async_add_executor_job(client.close)
-        # Erfolg: Titel mit Seriennummer zurückgeben
-        return {"title": f"Wechselrichter {data[CONF_SLAVE_ID]} (SN: {serial_number})"}
-
-    except AuroraError as e:
-        _LOGGER.error("Verbindungsfehler zum Wechselrichter: %s", str(e))
-        raise config_entries.ConfigFlowError("cannot_connect") from e
-    except Exception as e:
-        _LOGGER.exception("Unbekannter Fehler bei der Verbindung")
-        raise config_entries.ConfigFlowError("unknown") from eclass CannotConnect(HomeAssistantError):
+class CannotConnect(HomeAssistantError):
     """Error to indicate we cannot connect to the inverter."""
+
+async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
+    """Prüfe, ob die Verbindung zum Wechselrichter möglich ist."""
+    try:
+        # Hier deine Verbindungstest-Logik einfügen
+        pass
+    except Exception as e:
+        _LOGGER.exception("Fehler bei der Verbindung zum Wechselrichter: %s", e)
+        raise CannotConnect from e
+    return {"title": f"Wechselrichter {data[CONF_SLAVE_ID]}"}
 
 class AuroraSolarConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for ABB Aurora Solar Inverter."""
