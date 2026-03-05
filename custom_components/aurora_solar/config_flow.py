@@ -1,27 +1,3 @@
-# ALT:
-
-"""class AuroraSolarConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    async def async_step_user(self, user_input=None):
-        errors = {}
-        if user_input is not None:
-            return self.async_create_entry(
-                title=f"Aurora Wechselrichter {user_input[CONF_SLAVE_ID]}",
-                data=user_input
-            )
-
-        return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema({
-                vol.Required(CONF_HOST): str,
-                vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
-                vol.Required(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): int,
-                vol.Required("name"): str,
-            }),
-            errors=errors
-        )
-"""
-
-
 """Config flow for ABB Aurora Solar Inverter integration."""
 from __future__ import annotations
 import logging
@@ -50,11 +26,13 @@ DATA_SCHEMA = vol.Schema(
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
     """Prüfe, ob die Verbindung zum Wechselrichter möglich ist."""
     # Hier könntest du eine Verbindungstest-Logik einbauen (z. B. mit `AuroraTCPClient`).
-    # Beispiel: Test, ob der Host erreichbar ist.
     # Falls der Test fehlschlägt, wirf eine Exception:
     # if not await test_connection(data[CONF_HOST], data[CONF_PORT], data[CONF_SLAVE_ID]):
     #     raise CannotConnect
     return {"title": f"Wechselrichter {data[CONF_SLAVE_ID]}"}
+
+class CannotConnect(HomeAssistantError):
+    """Error to indicate we cannot connect to the inverter."""
 
 class AuroraSolarConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for ABB Aurora Solar Inverter."""
@@ -71,10 +49,8 @@ class AuroraSolarConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             try:
                 info = await validate_input(self.hass, user_input)
-                # Prüfe, ob dieser Wechselrichter bereits konfiguriert ist
                 await self.async_set_unique_id(f"{user_input[CONF_HOST]}_{user_input[CONF_SLAVE_ID]}")
                 self._abort_if_unique_id_configured()
-                # Erstelle den Config-Entry
                 return self.async_create_entry(title=info["title"], data=user_input)
             except CannotConnect:
                 errors["base"] = "cannot_connect"
@@ -121,6 +97,3 @@ class AuroraSolarOptionsFlow(config_entries.OptionsFlow):
                 }
             ),
         )
-
-class CannotConnect(HomeAssistantError):
-    """Error to indicate we cannot connect to the inverter."""
