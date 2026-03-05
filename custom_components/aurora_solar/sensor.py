@@ -2,6 +2,7 @@
 from __future__ import annotations
 import logging
 from typing import Any
+from datetime import timedelta
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
@@ -203,7 +204,7 @@ async def async_setup_entry(
     ]
 
     async_add_entities(sensors, True)
-
+    
 class AuroraDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching data from the Aurora inverter."""
 
@@ -213,7 +214,7 @@ class AuroraDataUpdateCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name=f"Aurora WR {slave_id}",
-            update_interval=60,
+            update_interval=timedelta(seconds=60),  # Hier wird timedelta verwendet
         )
         self._host = host
         self._port = port
