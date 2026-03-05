@@ -1,4 +1,447 @@
 """Support for ABB Aurora Solar Inverters via Waveshare RS485-to-Ethernet adapter."""
+from __future__ import annotations
+import logging
+from typing import Any
+
+from homeassistant.components.sensor import SensorEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import (
+    DataUpdateCoordinator,
+    UpdateFailed,
+)
+from homeassistant.const import CONF_HOST, CONF_PORT
+
+from .const import DOMAIN, CONF_SLAVE_ID
+
+_LOGGER = logging.getLogger(__name__)
+
+# --- MAPPINGS FÜR LESBARE TEXTE ---
+ALARM_MESSAGES = {
+    0x0000: "Keine Alarme",
+    0x0001: "Überlastung",
+    0x0002: "Netzspannung zu hoch",
+    0x0004: "Isolationsfehler",
+    0x0008: "Temperatur zu hoch",
+    0x0010: "Netzfrequenz außer Toleranz",
+}
+
+STATUS_MESSAGES = {
+    0x00: "Aus",
+    0x01: "Bereit",
+    0x02: "Eingeschaltet",
+    0x03: "Fehler",
+    0x04: "Wartung",
+}
+
+FAULT_MESSAGES = {
+    0x0000: "Kein Fehler",
+    0x0001: "Kurzschluss",
+    0x0002: "Kommunikationsfehler",
+}
+
+# --- EINHEITEN UND SKALIERUNGSFAKTOREN ---
+UNITS = {
+    "DSP_GRID_POWER": "W",
+    "DSP_DAILY_ENERGY": "Wh",
+    "DSP_TOTAL_ENERGY": "kWh",
+    "DSP_GRID_VOLTAGE": "V",
+    "DSP_GRID_CURRENT": "A",
+    "DSP_GRID_FREQUENCY": "Hz",
+    "DSP_TEMPERATURE": "°C",
+    "DSP_DC_VOLTAGE": "V",
+    "DSP_DC_CURRENT": "A",
+    "DSP_DC_POWER": "W",
+    "DSP_EFFICIENCY": "%",
+    "DSP_PF": "",
+    "DSP_AC_VOLTAGE_PHASE": "V",
+    "DSP_DC_VOLTAGE2": "V",
+    "DSP_DC_CURRENT2": "A",
+    "DSP_RADIATOR_TEMP": "°C",
+    "DSP_BOOSTER_TEMP": "°C",
+    "DSP_IPM_TEMP": "°C",
+    "DSP_DSP_TEMP": "°C",
+    "DSP_ALARMS": "",
+    "DSP_STATUS": "",
+    "DSP_EVENTS": "",
+    "DSP_FAULT_CODE": "",
+    "DSP_MODEL": "",
+    "DSP_SERIAL": "",
+    "DSP_FW_VERSION": "",
+    "DSP_DSP_VERSION": "",
+    "DSP_LAST_ALARM": "datum",
+    "DSP_LAST_FAULT": "datum",
+    "DSP_OPERATION_TIME": "h",
+    "DSP_GRID_RELAY_COUNTER": "",
+    "DSP_DC_DISCONNECT_COUNTER": "",
+    "DSP_PV1_VOLTAGE": "V",
+    "DSP_PV1_CURRENT": "A",
+    "DSP_PV2_VOLTAGE": "V",
+    "DSP_PV2_CURRENT": "A",
+    "DSP_PV1_POWER": "W",
+    "DSP_PV2_POWER": "W",
+}
+
+FACTORS = {
+    "DSP_GRID_POWER": 1,
+    "DSP_DAILY_ENERGY": 1,
+    "DSP_TOTAL_ENERGY": 0.1,
+    "DSP_GRID_VOLTAGE": 0.1,
+    "DSP_GRID_CURRENT": 0.1,
+    "DSP_GRID_FREQUENCY": 0.01,
+    "DSP_TEMPERATURE": 0.1,
+    "DSP_DC_VOLTAGE": 0.1,
+    "DSP_DC_CURRENT": 0.1,
+    "DSP_DC_POWER": 1,
+    "DSP_EFFICIENCY": 0.1,
+    "DSP_PF": 0.001,
+    "DSP_AC_VOLTAGE_PHASE": 0.1,
+    "DSP_DC_VOLTAGE2": 0.1,
+    "DSP_DC_CURRENT2": 0.1,
+    "DSP_RADIATOR_TEMP": 0.1,
+    "DSP_BOOSTER_TEMP": 0.1,
+    "DSP_IPM_TEMP": 0.1,
+    "DSP_DSP_TEMP": 0.1,
+    "DSP_ALARMS": 1,
+    "DSP_STATUS": 1,
+    "DSP_EVENTS": 1,
+    "DSP_FAULT_CODE": 1,
+    "DSP_MODEL": 1,
+    "DSP_SERIAL": 1,
+    "DSP_FW_VERSION": 1,
+    "DSP_DSP_VERSION": 1,
+    "DSP_LAST_ALARM": 1,
+    "DSP_LAST_FAULT": 1,
+    "DSP_OPERATION_TIME": 0.1,
+    "DSP_GRID_RELAY_COUNTER": 1,
+    "DSP_DC_DISCONNECT_COUNTER": 1,
+    "DSP_PV1_VOLTAGE": 0.1,
+    "DSP_PV1_CURRENT": 0.1,
+    "DSP_PV2_VOLTAGE": 0.1,
+    "DSP_PV2_CURRENT": 0.1,
+    "DSP_PV1_POWER": 1,
+    "DSP_PV2_POWER": 1,
+}
+
+# --- VOLLSTÄNDIGE BEFEHLSLISTE (INKL. ALLEN SENSOREN) ---
+COMMANDS = {
+    "DSP_GRID_POWER": b"\x30\x33\x0D",
+    "DSP_DAILY_ENERGY": b"\x31\x33\x0D",
+    "DSP_TOTAL_ENERGY": b"\x31\x34\x0D",
+    "DSP_GRID_VOLTAGE": b"\x32\x33\x0D",
+    "DSP_GRID_CURRENT": b"\x33\x33\x0D",
+    "DSP_GRID_FREQUENCY": b"\x34\x33\x0D",
+    "DSP_TEMPERATURE": b"\x35\x33\x0D",
+    "DSP_DC_VOLTAGE": b"\x36\x33\x0D",
+    "DSP_DC_CURRENT": b"\x37\x33\x0D",
+    "DSP_DC_POWER": b"\x38\x33\x0D",
+    "DSP_EFFICIENCY": b"\x39\x33\x0D",
+    "DSP_PF": b"\x3A\x33\x0D",
+    "DSP_AC_VOLTAGE_PHASE": b"\x3B\x33\x0D",
+    "DSP_DC_VOLTAGE2": b"\x3C\x33\x0D",
+    "DSP_DC_CURRENT2": b"\x3D\x33\x0D",
+    "DSP_RADIATOR_TEMP": b"\x3E\x33\x0D",
+    "DSP_BOOSTER_TEMP": b"\x3F\x33\x0D",
+    "DSP_IPM_TEMP": b"\x40\x33\x0D",
+    "DSP_DSP_TEMP": b"\x41\x33\x0D",
+    "DSP_ALARMS": b"\x50\x33\x0D",
+    "DSP_STATUS": b"\x51\x33\x0D",
+    "DSP_EVENTS": b"\x52\x33\x0D",
+    "DSP_FAULT_CODE": b"\x53\x33\x0D",
+    "DSP_MODEL": b"\x55\x33\x0D",
+    "DSP_SERIAL": b"\x56\x33\x0D",
+    "DSP_FW_VERSION": b"\x57\x33\x0D",
+    "DSP_DSP_VERSION": b"\x58\x33\x0D",
+    "DSP_LAST_ALARM": b"\x59\x33\x0D",
+    "DSP_LAST_FAULT": b"\x5A\x33\x0D",
+    "DSP_OPERATION_TIME": b"\x5B\x33\x0D",
+    "DSP_GRID_RELAY_COUNTER": b"\x5C\x33\x0D",
+    "DSP_DC_DISCONNECT_COUNTER": b"\x5D\x33\x0D",
+    "DSP_PV1_VOLTAGE": b"\x60\x33\x0D",
+    "DSP_PV1_CURRENT": b"\x61\x33\x0D",
+    "DSP_PV2_VOLTAGE": b"\x62\x33\x0D",
+    "DSP_PV2_CURRENT": b"\x63\x33\x0D",
+    "DSP_PV1_POWER": b"\x64\x33\x0D",
+    "DSP_PV2_POWER": b"\x65\x33\x0D",
+}
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up all Aurora Solar Inverter sensors from config entry."""
+    host = config_entry.data[CONF_HOST]
+    port = config_entry.data[CONF_PORT]
+    slave_id = config_entry.data[CONF_SLAVE_ID]
+    name = config_entry.data.get("name", f"Aurora WR {slave_id}")
+
+    coordinator = AuroraDataUpdateCoordinator(hass, host, port, slave_id)
+
+    # Erstelle alle Sensoren für diesen Wechselrichter
+    sensors = [
+        AuroraSensor(
+            coordinator=coordinator,
+            sensor_type=st,
+            unit=UNITS.get(st, ""),
+            factor=FACTORS.get(st, 1),
+            name=f"Wechselrichter {slave_id} - {st.split('_')[-1].lower()}",
+            text_mapping=(
+                ALARM_MESSAGES if st == "DSP_ALARMS"
+                else STATUS_MESSAGES if st == "DSP_STATUS"
+                else FAULT_MESSAGES if st == "DSP_FAULT_CODE"
+                else None
+            ),
+            is_string=st in [
+                "DSP_ALARMS", "DSP_STATUS", "DSP_EVENTS",
+                "DSP_FAULT_CODE", "DSP_MODEL", "DSP_SERIAL",
+                "DSP_FW_VERSION", "DSP_DSP_VERSION"
+            ],
+        )
+        for st in COMMANDS
+    ]
+
+    async_add_entities(sensors, True)
+
+class AuroraDataUpdateCoordinator(DataUpdateCoordinator):
+    """Class to manage fetching data from the Aurora inverter."""
+
+    def __init__(self, hass: HomeAssistant, host: str, port: int, slave_id: int):
+        """Initialize the coordinator."""
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=f"Aurora WR {slave_id}",
+            update_interval=60,
+        )
+        self._host = host
+        self._port = port
+        self._slave_id = slave_id
+        self.data = {}
+
+    async def _async_update_data(self):
+        """Fetch data from the Aurora inverter."""
+        try:
+            from aurorapy.client import AuroraTCPClient, AuroraError
+            client = AuroraTCPClient(ip=self._host, port=self._port, address=self._slave_id, timeout=20)
+            client.connect()
+
+            for sensor_type, command in COMMANDS.items():
+                try:
+                    if sensor_type == "DSP_GRID_POWER":
+                        self.data[sensor_type] = client.measure(3)
+                    elif sensor_type == "DSP_DAILY_ENERGY":
+                        self.data[sensor_type] = client.cumulated_energy(0)
+                    elif sensor_type == "DSP_TOTAL_ENERGY":
+                        self.data[sensor_type] = client.cumulated_energy(1)
+                    elif sensor_type == "DSP_GRID_VOLTAGE":
+                        self.data[sensor_type] = client.measure(1)
+                    elif sensor_type == "DSP_GRID_CURRENT":
+                        self.data[sensor_type] = client.measure(2)
+                    elif sensor_type == "DSP_GRID_FREQUENCY":
+                        self.data[sensor_type] = client.measure(4)
+                    elif sensor_type == "DSP_PF":
+                        self.data[sensor_type] = client.measure(9)
+                    elif sensor_type == "DSP_DC_VOLTAGE":
+                        self.data[sensor_type] = client.measure(23)
+                    elif sensor_type == "DSP_DC_CURRENT":
+                        self.data[sensor_type] = client.measure(25)
+                    elif sensor_type == "DSP_DC_POWER":
+                        self.data[sensor_type] = client.measure(12)
+                    elif sensor_type == "DSP_TEMPERATURE":
+                        self.data[sensor_type] = client.measure(21)
+                    elif sensor_type == "DSP_RADIATOR_TEMP":
+                        self.data[sensor_type] = client.measure(22)
+                    elif sensor_type == "DSP_AMBIENT_TEMP":
+                        self.data[sensor_type] = client.measure(15)
+                    elif sensor_type == "DSP_MPPT_POWER":
+                        self.data[sensor_type] = client.measure(16)
+                    elif sensor_type == "DSP_ISOLATION":
+                        self.data[sensor_type] = client.measure(30)
+                    elif sensor_type == "DSP_OPERATING_HOURS":
+                        self.data[sensor_type] = client.measure(18)
+                    elif sensor_type == "DSP_SERIAL_NUMBER":
+                        self.data[sensor_type] = client.serial_number()
+                    elif sensor_type == "DSP_VERSION":
+                        self.data[sensor_type] = client.version()
+                    elif sensor_type == "DSP_MODEL":
+                        self.data[sensor_type] = client.model()
+                    elif sensor_type == "DSP_EVENTS":
+                        self.data[sensor_type] = client.measure(21)
+                    elif sensor_type == "DSP_LAST_ERROR":
+                        self.data[sensor_type] = client.measure(22)
+                    elif sensor_type == "DSP_ALARMS":
+                        self.data[sensor_type] = client.measure(19)
+                    elif sensor_type == "DSP_FAULT_CODE":
+                        self.data[sensor_type] = client.measure(20)
+                    elif sensor_type == "DSP_STATUS":
+                        self.data[sensor_type] = client.measure(23)
+                    elif sensor_type == "DSP_INPUT_2_VOLTAGE":
+                        self.data[sensor_type] = client.measure(26)
+                    elif sensor_type == "DSP_INPUT_2_CURRENT":
+                        self.data[sensor_type] = client.measure(27)
+                    elif sensor_type == "DSP_VBULK":
+                        self.data[sensor_type] = client.measure(5)
+                    elif sensor_type == "DSP_ILEAK_DC_DC":
+                        self.data[sensor_type] = client.measure(6)
+                    elif sensor_type == "DSP_ILEAK_INVERTER":
+                        self.data[sensor_type] = client.measure(7)
+                    elif sensor_type == "DSP_PIN1":
+                        self.data[sensor_type] = client.measure(8)
+                    elif sensor_type == "DSP_PIN2":
+                        self.data[sensor_type] = client.measure(9)
+                    elif sensor_type == "DSP_GRID_VOLTAGE_DC_DC":
+                        self.data[sensor_type] = client.measure(28)
+                    elif sensor_type == "DSP_GRID_FREQUENCY_DC_DC":
+                        self.data[sensor_type] = client.measure(29)
+                    elif sensor_type == "DSP_VBULK_DC_DC":
+                        self.data[sensor_type] = client.measure(31)
+                    elif sensor_type == "DSP_AVERAGE_GRID_VOLTAGE":
+                        self.data[sensor_type] = client.measure(32)
+                    elif sensor_type == "DSP_VBULK_MID":
+                        self.data[sensor_type] = client.measure(33)
+                    elif sensor_type == "DSP_POWER_PEAK":
+                        self.data[sensor_type] = client.measure(34)
+                    elif sensor_type == "DSP_POWER_PEAK_TODAY":
+                        self.data[sensor_type] = client.measure(35)
+                    elif sensor_type == "DSP_GRID_VOLTAGE_NEUTRAL":
+                        self.data[sensor_type] = client.measure(36)
+                    elif sensor_type == "DSP_GRID_VOLTAGE_NEUTRAL_PHASE":
+                        self.data[sensor_type] = client.measure(38)
+                    elif sensor_type == "DSP_WIND_GENERATOR_FREQUENCY":
+                        self.data[sensor_type] = client.measure(37)
+                    elif sensor_type == "DSP_GRID_CURRENT_PHASE_R":
+                        self.data[sensor_type] = client.measure(39)
+                    elif sensor_type == "DSP_GRID_CURRENT_PHASE_S":
+                        self.data[sensor_type] = client.measure(40)
+                    elif sensor_type == "DSP_GRID_CURRENT_PHASE_T":
+                        self.data[sensor_type] = client.measure(41)
+                    elif sensor_type == "DSP_FREQUENCY_PHASE_R":
+                        self.data[sensor_type] = client.measure(42)
+                    elif sensor_type == "DSP_FREQUENCY_PHASE_S":
+                        self.data[sensor_type] = client.measure(43)
+                    elif sensor_type == "DSP_FREQUENCY_PHASE_T":
+                        self.data[sensor_type] = client.measure(44)
+                    elif sensor_type == "DSP_VBULK_PLUS":
+                        self.data[sensor_type] = client.measure(45)
+                    elif sensor_type == "DSP_VBULK_MINUS":
+                        self.data[sensor_type] = client.measure(46)
+                    elif sensor_type == "DSP_SUPERVISOR_TEMPERATURE":
+                        self.data[sensor_type] = client.measure(47)
+                    elif sensor_type == "DSP_ALIM_TEMPERATURE":
+                        self.data[sensor_type] = client.measure(48)
+                    elif sensor_type == "DSP_HEAT_SINK_TEMPERATURE":
+                        self.data[sensor_type] = client.measure(49)
+                    elif sensor_type == "DSP_TEMPERATURE_1":
+                        self.data[sensor_type] = client.measure(50)
+                    elif sensor_type == "DSP_TEMPERATURE_2":
+                        self.data[sensor_type] = client.measure(51)
+                    elif sensor_type == "DSP_TEMPERATURE_3":
+                        self.data[sensor_type] = client.measure(52)
+                    elif sensor_type == "DSP_FAN_1_SPEED":
+                        self.data[sensor_type] = client.measure(53)
+                    elif sensor_type == "DSP_FAN_2_SPEED":
+                        self.data[sensor_type] = client.measure(54)
+                    elif sensor_type == "DSP_FAN_3_SPEED":
+                        self.data[sensor_type] = client.measure(55)
+                    elif sensor_type == "DSP_FAN_4_SPEED":
+                        self.data[sensor_type] = client.measure(56)
+                    elif sensor_type == "DSP_FAN_5_SPEED":
+                        self.data[sensor_type] = client.measure(57)
+                    elif sensor_type == "DSP_POWER_SATURATION_LIMIT":
+                        self.data[sensor_type] = client.measure(58)
+                    elif sensor_type == "DSP_RIFERIMENTO_ANELLO_BULK":
+                        self.data[sensor_type] = client.measure(59)
+                    elif sensor_type == "DSP_VPANEL_MICRO":
+                        self.data[sensor_type] = client.measure(60)
+                    elif sensor_type == "DSP_GRID_VOLTAGE_PHASE_R":
+                        self.data[sensor_type] = client.measure(61)
+                    elif sensor_type == "DSP_GRID_VOLTAGE_PHASE_S":
+                        self.data[sensor_type] = client.measure(62)
+                    elif sensor_type == "DSP_GRID_VOLTAGE_PHASE_T":
+                        self.data[sensor_type] = client.measure(63)
+                except AuroraError as e:
+                    self.data[sensor_type] = None
+                    _LOGGER.error("Fehler bei %s: %s", sensor_type, e)
+                except Exception as e:
+                    self.data[sensor_type] = None
+                    _LOGGER.error("Allgemeiner Fehler bei %s: %s", sensor_type, e)
+
+            client.close()
+        except Exception as e:
+            raise UpdateFailed(f"Fehler bei der Kommunikation: {e}") from e
+
+class AuroraSensor(SensorEntity):
+    """Representation of an Aurora Solar Inverter sensor."""
+
+    def __init__(
+        self,
+        coordinator: AuroraDataUpdateCoordinator,
+        sensor_type: str,
+        unit: str,
+        factor: float,
+        name: str,
+        text_mapping: dict | None = None,
+        is_string: bool = False,
+    ):
+        """Initialize the sensor."""
+        self._coordinator = coordinator
+        self._sensor_type = sensor_type
+        self._unit = unit
+        self._factor = factor
+        self._name = name
+        self._text_mapping = text_mapping
+        self._is_string = is_string
+        self._attr_unique_id = f"aurora_{coordinator._slave_id}_{sensor_type.lower()}"
+        self._attr_icon = ICON_MAPPING.get(sensor_type, "mdi:help")
+
+    @property
+    def name(self):
+        """Return the name."""
+        return self._name
+
+    @property
+    def native_value(self):
+        """Return the state."""
+        value = self._coordinator.data.get(self._sensor_type)
+        if value is None:
+            return None
+        if self._is_string:
+            return self._text_mapping.get(value, str(value)) if self._text_mapping else value
+        return round(value * self._factor, 2) if self._factor != 1 else value
+
+    @property
+    def native_unit_of_measurement(self):
+        """Return the unit."""
+        return self._unit if not self._is_string else None
+
+    @property
+    def icon(self):
+        """Return the icon."""
+        return self._attr_icon
+
+    @property
+    def available(self):
+        """Return availability."""
+        return self._coordinator.last_update_success
+
+    @callback
+    def _handle_coordinator_update(self):
+        """Update HA state on new data."""
+        self.async_write_ha_state()
+
+    async def async_added_to_hass(self):
+        """Register update listener."""
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            self._coordinator.async_add_listener(self._handle_coordinator_update)
+        )
+
+    async def async_update(self):
+        """Request refresh."""
+        await self._coordinator.async_request_refresh()
+"""Support for ABB Aurora Solar Inverters via Waveshare RS485-to-Ethernet adapter."""
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import CONF_HOST, CONF_PORT
 import logging
