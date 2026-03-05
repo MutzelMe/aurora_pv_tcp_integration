@@ -8,6 +8,30 @@ from .const import DOMAIN, CONF_SLAVE_ID
 
 _LOGGER = logging.getLogger(__name__)
 
+# Mapping für lesbare Texte
+ALARM_MESSAGES = {
+    0x0000: "Keine Alarme",
+    0x0001: "Überlastung",
+    0x0002: "Netzspannung zu hoch",
+    0x0004: "Isolationsfehler",
+    0x0008: "Temperatur zu hoch",
+    0x0010: "Netzfrequenz außer Toleranz",
+}
+
+STATUS_MESSAGES = {
+    0x00: "Aus",
+    0x01: "Bereit",
+    0x02: "Eingeschaltet",
+    0x03: "Fehler",
+    0x04: "Wartung",
+}
+
+FAULT_MESSAGES = {
+    0x0000: "Kein Fehler",
+    0x0001: "Kurzschluss",
+    0x0002: "Kommunikationsfehler",
+}
+
 class AuroraSensorBase(SensorEntity):
     """Basis-Klasse für alle ABB Aurora Sensoren."""
 
@@ -16,7 +40,7 @@ class AuroraSensorBase(SensorEntity):
         self._host = host
         self._port = port
         self._slave_id = slave_id
-        self._name = name
+        self._name = f"{name} {sensor_type.split('_')[-1].title()}"
         self._sensor_type = sensor_type
         self._unit = unit
         self._factor = factor
@@ -27,17 +51,12 @@ class AuroraSensorBase(SensorEntity):
         self._attr_unique_id = f"aurora_{slave_id}_{sensor_type.lower()}"
 
     @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._name
-
-    @property
     def state(self):
-        """Return the state of the sensor."""
+        """Aktueller Zustand des Sensors."""
         return self._state
 
     def update(self):
-        """Fetch new state data for the sensor."""
+        """Aktualisiere die Sensordaten."""
         try:
             client = AuroraTCPClient(ip=self._host, port=self._port, address=self._slave_id, timeout=10)
             client.connect()
@@ -64,10 +83,22 @@ class AuroraSensorBase(SensorEntity):
                 self._state = client.measure(12)
             elif self._sensor_type == "DSP_TEMPERATURE":
                 self._state = client.measure(13)
+            elif self._sensor_type == "DSP_RADIATOR_TEMP":
+                self._state = client.measure(14)
+            elif self._sensor_type == "DSP_AMBIENT_TEMP":
+                self._state = client.measure(15)
+            elif self._sensor_type == "DSP_MPPT_POWER":
+                self._state = client.measure(16)
+            elif self._sensor_type == "DSP_ISOLATION":
+                self._state = client.measure(17)
+            elif self._sensor_type == "DSP_OPERATING_HOURS":
+                self._state = client.measure(18)
             elif self._sensor_type == "DSP_SERIAL_NUMBER":
                 self._state = client.serial_number()
             elif self._sensor_type == "DSP_VERSION":
                 self._state = client.version()
+            elif self._sensor_type == "DSP_MODEL":
+                self._state = client.model()
             elif self._sensor_type == "DSP_ALARMS":
                 alarms = client.alarms()
                 self._state = self._text_mapping.get(alarms, f"Unbekannt (0x{alarms:04X})")
@@ -83,63 +114,47 @@ class AuroraSensorBase(SensorEntity):
             self._state = None
             _LOGGER.error("Fehler bei %s: %s", self._name, e)
 
-# Mapping für lesbare Texte
-ALARM_MESSAGES = {
-    0x0000: "Keine Alarme",
-    0x0001: "Überlastung",
-    0x0002: "Netzspannung zu hoch",
-    0x0004: "Isolationsfehler",
-    0x0008: "Temperatur zu hoch",
-    0x0010: "Netzfrequenz außer Toleranz",
-}
-
-STATUS_MESSAGES = {
-    0x00: "Aus",
-    0x01: "Bereit",
-    0x02: "Eingeschaltet",
-    0x03: "Fehler",
-    0x04: "Wartung",
-}
-
-FAULT_MESSAGES = {
-    0x0000: "Kein Fehler",
-    0x0001: "Kurzschluss",
-    0x0002: "Kommunikationsfehler",
-}
-
 def setup_platform(hass, config, add_entities, discovery_info=None):
-    """Set up the ABB Aurora sensors."""
+    """Richte ALLE ABB Aurora Sensoren ein."""
     host = config[CONF_HOST]
     port = config[CONF_PORT]
     slave_id = config.get(CONF_SLAVE_ID, 2)
     name = config.get("name", f"Aurora WR {slave_id}")
 
-    # Create all sensors for this inverter
+    # Erstelle alle Sensoren für diesen Wechselrichter
     sensors = [
         # Leistung und Energie
-        AuroraSensorBase(host, port, slave_id, f"{name} Power", "DSP_GRID_POWER", "W"),
-        AuroraSensorBase(host, port, slave_id, f"{name} Daily Energy", "DSP_DAILY_ENERGY", "Wh"),
-        AuroraSensorBase(host, port, slave_id, f"{name} Total Energy", "DSP_TOTAL_ENERGY", "kWh"),
-        AuroraSensorBase(host, port, slave_id, f"{name} Grid Voltage", "DSP_GRID_VOLTAGE", "V"),
-        AuroraSensorBase(host, port, slave_id, f"{name} Grid Current", "DSP_GRID_CURRENT", "A"),
-        AuroraSensorBase(host, port, slave_id, f"{name} Grid Frequency", "DSP_GRID_FREQUENCY", "Hz"),
-        AuroraSensorBase(host, port, slave_id, f"{name} PF", "DSP_PF", "", 0.01),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_POWER", "W"),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DAILY_ENERGY", "Wh"),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TOTAL_ENERGY", "kWh", factor=0.1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE", "V"),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT", "A"),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_FREQUENCY", "Hz"),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_PF", "", 0, 0.01),
 
         # Gleichstromkreis
-        AuroraSensorBase(host, port, slave_id, f"{name} DC Voltage", "DSP_DC_VOLTAGE", "V"),
-        AuroraSensorBase(host, port, slave_id, f"{name} DC Current", "DSP_DC_CURRENT", "A"),
-        AuroraSensorBase(host, port, slave_id, f"{name} DC Power", "DSP_DC_POWER", "W"),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_VOLTAGE", "V"),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_CURRENT", "A"),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_POWER", "W"),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_MPPT_POWER", "W"),
 
         # Temperatur und Umwelt
-        AuroraSensorBase(host, port, slave_id, f"{name} Temperature", "DSP_TEMPERATURE", "°C"),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE", "°C"),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_RADIATOR_TEMP", "°C"),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_AMBIENT_TEMP", "°C"),
 
         # Diagnose (wichtig!)
-        AuroraSensorBase(host, port, slave_id, f"{name} Alarms", "DSP_ALARMS", "", text_mapping=ALARM_MESSAGES),
-        AuroraSensorBase(host, port, slave_id, f"{name} Status", "DSP_STATUS", "", text_mapping=STATUS_MESSAGES),
-        AuroraSensorBase(host, port, slave_id, f"{name} Fault Code", "DSP_FAULT_CODE", "", text_mapping=FAULT_MESSAGES),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_ALARMS", "", text_mapping=ALARM_MESSAGES),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAULT_CODE", "", text_mapping=FAULT_MESSAGES),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_STATUS", "", text_mapping=STATUS_MESSAGES),
 
         # Seriennummern und Modell (als String)
-        AuroraSensorBase(host, port, slave_id, f"{name} Serial Number", "DSP_SERIAL_NUMBER", "", is_string=True),
-        AuroraSensorBase(host, port, slave_id, f"{name} Version", "DSP_VERSION", "", is_string=True),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_SERIAL_NUMBER", "", is_string=True),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_MODEL", "", is_string=True),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VERSION", "", is_string=True),
+
+        # Erweiterte Diagnose
+        AuroraSensorBase(host, port, slave_id, name, "DSP_ISOLATION", "kΩ"),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_OPERATING_HOURS", "h"),
     ]
     add_entities(sensors, True)
