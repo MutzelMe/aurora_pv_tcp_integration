@@ -2,7 +2,7 @@
   "domain": "aurora_solar_tcp",
   "name": "Aurora Solar Inverter via TCP",
   "documentation": "http://gitea.internal/kai/aurora_pv_tcp_integration",
-  "documentation": "http://gitea.internal/kai/aurora_pv_tcp_integration/issues",
+  "issues": "http://gitea.internal/kai/aurora_pv_tcp_integration/issues",
   "dependencies": [],
   "codeowners": ["@kai"],
   "requirements": ["aurorapy>=0.2.7"],
