@@ -290,7 +290,7 @@ class AuroraDataUpdateCoordinator(DataUpdateCoordinator):
                     elif sensor_type == "DSP_VERSION":
                         self.data[sensor_type] = client.version()
                     elif sensor_type == "DSP_MODEL":
-                        self.data[sensor_type] = client.model()
+                        self.data[sensor_type] = None  # aurorapy hat keine model()-Methode
                     elif sensor_type == "DSP_EVENTS":
                         self.data[sensor_type] = client.measure(21)
                     elif sensor_type == "DSP_LAST_ERROR":
@@ -429,6 +429,8 @@ class AuroraSensor(SensorEntity):
     @property
     def native_value(self):
         """Return the state."""
+        if self._coordinator.data is None:
+            return None
         value = self._coordinator.data.get(self._sensor_type)
         if value is None:
             return None
@@ -567,7 +569,7 @@ class AuroraSensorBase(SensorEntity):
             elif self._sensor_type == "DSP_VERSION":
                 self._state = client.version()
             elif self._sensor_type == "DSP_MODEL":
-                self._state = client.model()
+                self._state = None  # aurorapy hat keine model()-Methode
             elif self._sensor_type == "DSP_EVENTS":
                 events = measure_with_retry(client, 21)
                 self._state = events
