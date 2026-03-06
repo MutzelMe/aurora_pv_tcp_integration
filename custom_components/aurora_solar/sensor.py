@@ -243,6 +243,8 @@ class AuroraDataUpdateCoordinator(DataUpdateCoordinator):
         self._port = port
         self._slave_id = slave_id
         self.data = {}
+      
+        
 async def _async_update_data(self):
     """Fetch data from the Aurora inverter."""
     try:
