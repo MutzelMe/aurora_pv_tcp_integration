@@ -18,6 +18,29 @@ from .const import DOMAIN, CONF_SLAVE_ID
 
 _LOGGER = logging.getLogger(__name__)
 
+# Icon-Mapping für Sensoren
+ICON_MAPPING = {
+    "DSP_GRID_POWER": "mdi:solar-power",
+    "DSP_DC_POWER": "mdi:solar-power",
+    "DSP_MPPT_POWER": "mdi:solar-power",
+    "DSP_POWER_PEAK": "mdi:solar-power",
+    "DSP_PIN1": "mdi:solar-power",
+    "DSP_PIN2": "mdi:solar-power",
+    "DSP_POWER_PEAK_TODAY": "mdi:solar-power",
+    "DSP_DAILY_ENERGY": "mdi:solar-power-variant",
+    "DSP_TOTAL_ENERGY": "mdi:counter",
+    "DSP_GRID_VOLTAGE": "mdi:flash",
+    "DSP_AVERAGE_GRID_VOLTAGE": "mdi:flash",
+    "DSP_GRID_CURRENT": "mdi:current-ac",
+    "DSP_DC_VOLTAGE": "mdi:flash-outline",
+    "DSP_DC_CURRENT": "mdi:current-dc",
+    "DSP_TEMPERATURE": "mdi:thermometer",
+    "DSP_ALARMS": "mdi:alert",
+    "DSP_STATUS": "mdi:information",
+    "DSP_FAULT_CODE": "mdi:alert-circle",
+}
+
+
 # --- MAPPINGS FÜR LESBARE TEXTE ---
 ALARM_MESSAGES = {
     0x0000: "Keine Alarme",
@@ -512,32 +535,8 @@ class AuroraSensorBase(SensorEntity):
         self._state = None
         self._attr_native_unit_of_measurement = unit if not is_string else None
         self._attr_unique_id = f"aurora_{slave_id}_{sensor_type.lower()}"
+        self._attr_icon = ICON_MAPPING.get(sensor_type, "mdi:help")  # Direkter Zugriff auf ICON_MAPPING
         self._attr_icon = self._get_icon_for_sensor_type(sensor_type)
-
-    def _get_icon_for_sensor_type(self, sensor_type):
-        """Gibt das passende Icon für den Sensor-Typ zurück."""
-        icon_mapping = {
-            "DSP_GRID_POWER": "mdi:solar-power",
-            "DSP_DC_POWER": "mdi:solar-power",
-            "DSP_MPPT_POWER": "mdi:solar-power",
-            "DSP_POWER_PEAK": "mdi:solar-power",
-            "DSP_PIN1": "mdi:solar-power",
-            "DSP_PIN2": "mdi:solar-power",
-            "DSP_POWER_PEAK_TODAY": "mdi:solar-power",   
-            "DSP_DAILY_ENERGY": "mdi:solar-power-variant",
-            "DSP_TOTAL_ENERGY": "mdi:counter",
-            "DSP_GRID_VOLTAGE": "mdi:flash",
-            "DSP_AVERAGE_GRID_VOLTAGE": "mdi:flash",
-            "DSP_GRID_CURRENT": "mdi:current-ac",
-            "DSP_DC_VOLTAGE": "mdi:flash-outline",
-            "DSP_DC_CURRENT": "mdi:current-dc",
-            "DSP_TEMPERATURE": "mdi:thermometer",
-            "DSP_ALARMS": "mdi:alert",
-            "DSP_STATUS": "mdi:information",
-            "DSP_FAULT_CODE": "mdi:alert-circle",
-        }
-        return icon_mapping.get(sensor_type, "mdi:help")
-
 
     @property
     def state(self):
