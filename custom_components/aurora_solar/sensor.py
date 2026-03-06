@@ -149,6 +149,98 @@ FACTORS = {
     "DSP_PV2_POWER": 1,
 }
 
+# --- LESBARE SENSOR-NAMEN ---
+SENSOR_NAMES = {
+    "DSP_GRID_POWER":                "Netzleistung",
+    "DSP_DAILY_ENERGY":              "Tagesenergie",
+    "DSP_TOTAL_ENERGY":              "Gesamtenergie",
+    "DSP_GRID_VOLTAGE":              "Netzspannung",
+    "DSP_GRID_CURRENT":              "Netzstrom",
+    "DSP_GRID_FREQUENCY":            "Netzfrequenz",
+    "DSP_TEMPERATURE":               "Temperatur",
+    "DSP_DC_VOLTAGE":                "DC-Spannung",
+    "DSP_DC_CURRENT":                "DC-Strom",
+    "DSP_DC_POWER":                  "DC-Leistung",
+    "DSP_EFFICIENCY":                "Wirkungsgrad",
+    "DSP_PF":                        "Leistungsfaktor",
+    "DSP_AC_VOLTAGE_PHASE":          "AC-Phasenspannung",
+    "DSP_DC_VOLTAGE2":               "DC-Spannung 2",
+    "DSP_DC_CURRENT2":               "DC-Strom 2",
+    "DSP_RADIATOR_TEMP":             "Kühlkörper-Temp",
+    "DSP_BOOSTER_TEMP":              "Booster-Temp",
+    "DSP_IPM_TEMP":                  "IPM-Temp",
+    "DSP_DSP_TEMP":                  "DSP-Temp",
+    "DSP_ALARMS":                    "Alarme",
+    "DSP_STATUS":                    "Status",
+    "DSP_EVENTS":                    "Ereignisse",
+    "DSP_FAULT_CODE":                "Fehlercode",
+    "DSP_MODEL":                     "Modell",
+    "DSP_SERIAL":                    "Seriennummer",
+    "DSP_FW_VERSION":                "FW-Version",
+    "DSP_DSP_VERSION":               "DSP-Version",
+    "DSP_LAST_ALARM":                "Letzter Alarm",
+    "DSP_LAST_FAULT":                "Letzter Fehler",
+    "DSP_OPERATION_TIME":            "Betriebsstunden",
+    "DSP_GRID_RELAY_COUNTER":        "Netzrelais-Zähler",
+    "DSP_DC_DISCONNECT_COUNTER":     "DC-Trenn-Zähler",
+    "DSP_PV1_VOLTAGE":               "PV1-Spannung",
+    "DSP_PV1_CURRENT":               "PV1-Strom",
+    "DSP_PV2_VOLTAGE":               "PV2-Spannung",
+    "DSP_PV2_CURRENT":               "PV2-Strom",
+    "DSP_PV1_POWER":                 "PV1-Leistung",
+    "DSP_PV2_POWER":                 "PV2-Leistung",
+    "DSP_AMBIENT_TEMP":              "Umgebungstemperatur",
+    "DSP_MPPT_POWER":                "MPPT-Leistung",
+    "DSP_ISOLATION":                 "Isolation",
+    "DSP_OPERATING_HOURS":           "Betriebsstunden",
+    "DSP_SERIAL_NUMBER":             "Seriennummer",
+    "DSP_VERSION":                   "Version",
+    "DSP_EVENTS":                    "Ereignisse",
+    "DSP_LAST_ERROR":                "Letzter Fehler",
+    "DSP_INPUT_2_VOLTAGE":           "Eingang-2-Spannung",
+    "DSP_INPUT_2_CURRENT":           "Eingang-2-Strom",
+    "DSP_VBULK":                     "Bulk-Spannung",
+    "DSP_ILEAK_DC_DC":               "Leckstrom DC/DC",
+    "DSP_ILEAK_INVERTER":            "Leckstrom Wechselrichter",
+    "DSP_PIN1":                      "Eingangsleistung 1",
+    "DSP_PIN2":                      "Eingangsleistung 2",
+    "DSP_GRID_VOLTAGE_DC_DC":        "Netzspannung DC/DC",
+    "DSP_GRID_FREQUENCY_DC_DC":      "Netzfrequenz DC/DC",
+    "DSP_VBULK_DC_DC":               "Bulk-Spannung DC/DC",
+    "DSP_AVERAGE_GRID_VOLTAGE":      "Mittl. Netzspannung",
+    "DSP_VBULK_MID":                 "Bulk-Spannung Mitte",
+    "DSP_POWER_PEAK":                "Spitzenleistung",
+    "DSP_POWER_PEAK_TODAY":          "Spitzenleistung heute",
+    "DSP_GRID_VOLTAGE_NEUTRAL":      "Netzspannung Neutral",
+    "DSP_GRID_VOLTAGE_NEUTRAL_PHASE":"Netzspannung Neutral-Phase",
+    "DSP_WIND_GENERATOR_FREQUENCY":  "Windgenerator-Frequenz",
+    "DSP_GRID_CURRENT_PHASE_R":      "Netzstrom Phase R",
+    "DSP_GRID_CURRENT_PHASE_S":      "Netzstrom Phase S",
+    "DSP_GRID_CURRENT_PHASE_T":      "Netzstrom Phase T",
+    "DSP_FREQUENCY_PHASE_R":         "Frequenz Phase R",
+    "DSP_FREQUENCY_PHASE_S":         "Frequenz Phase S",
+    "DSP_FREQUENCY_PHASE_T":         "Frequenz Phase T",
+    "DSP_VBULK_PLUS":                "Bulk-Spannung Plus",
+    "DSP_VBULK_MINUS":               "Bulk-Spannung Minus",
+    "DSP_SUPERVISOR_TEMPERATURE":    "Supervisor-Temp",
+    "DSP_ALIM_TEMPERATURE":          "Alim-Temp",
+    "DSP_HEAT_SINK_TEMPERATURE":     "Kühlkörper-Temp 2",
+    "DSP_TEMPERATURE_1":             "Temperatur 1",
+    "DSP_TEMPERATURE_2":             "Temperatur 2",
+    "DSP_TEMPERATURE_3":             "Temperatur 3",
+    "DSP_FAN_1_SPEED":               "Lüfter 1",
+    "DSP_FAN_2_SPEED":               "Lüfter 2",
+    "DSP_FAN_3_SPEED":               "Lüfter 3",
+    "DSP_FAN_4_SPEED":               "Lüfter 4",
+    "DSP_FAN_5_SPEED":               "Lüfter 5",
+    "DSP_POWER_SATURATION_LIMIT":    "Leistungssättigung",
+    "DSP_RIFERIMENTO_ANELLO_BULK":   "Bulk-Regelreferenz",
+    "DSP_VPANEL_MICRO":              "Panel-Mikro-Spannung",
+    "DSP_GRID_VOLTAGE_PHASE_R":      "Netzspannung Phase R",
+    "DSP_GRID_VOLTAGE_PHASE_S":      "Netzspannung Phase S",
+    "DSP_GRID_VOLTAGE_PHASE_T":      "Netzspannung Phase T",
+}
+
 # --- VOLLSTÄNDIGE BEFEHLSLISTE (INKL. ALLEN SENSOREN) ---
 COMMANDS = {
     "DSP_GRID_POWER": b"\x30\x33\x0D",
@@ -211,7 +303,7 @@ async def async_setup_entry(
             sensor_type=st,
             unit=UNITS.get(st, ""),
             factor=FACTORS.get(st, 1),
-            name=f"Wechselrichter {slave_id} - {st.split('_')[-1].lower()}",
+            name=f"WR {slave_id} {SENSOR_NAMES.get(st, st)}",
             text_mapping=(
                 ALARM_MESSAGES if st == "DSP_ALARMS"
                 else STATUS_MESSAGES if st == "DSP_STATUS"
@@ -243,10 +335,10 @@ class AuroraDataUpdateCoordinator(DataUpdateCoordinator):
         self._host = host
         self._port = port
         self._slave_id = slave_id
-        self.data = {}
 
     async def _async_update_data(self):
         """Fetch data from the Aurora inverter."""
+        data = {}
         try:
             client = AuroraTCPClient(ip=self._host, port=self._port, address=self._slave_id, timeout=20)
             client.connect()
@@ -254,147 +346,148 @@ class AuroraDataUpdateCoordinator(DataUpdateCoordinator):
             for sensor_type, command in COMMANDS.items():
                 try:
                     if sensor_type == "DSP_GRID_POWER":
-                        self.data[sensor_type] = client.measure(3)
+                        data[sensor_type] = client.measure(3)
                     elif sensor_type == "DSP_DAILY_ENERGY":
-                        self.data[sensor_type] = client.cumulated_energy(0)
+                        data[sensor_type] = client.cumulated_energy(0)
                     elif sensor_type == "DSP_TOTAL_ENERGY":
-                        self.data[sensor_type] = client.cumulated_energy(1)
+                        data[sensor_type] = client.cumulated_energy(1)
                     elif sensor_type == "DSP_GRID_VOLTAGE":
-                        self.data[sensor_type] = client.measure(1)
+                        data[sensor_type] = client.measure(1)
                     elif sensor_type == "DSP_GRID_CURRENT":
-                        self.data[sensor_type] = client.measure(2)
+                        data[sensor_type] = client.measure(2)
                     elif sensor_type == "DSP_GRID_FREQUENCY":
-                        self.data[sensor_type] = client.measure(4)
+                        data[sensor_type] = client.measure(4)
                     elif sensor_type == "DSP_PF":
-                        self.data[sensor_type] = client.measure(9)
+                        data[sensor_type] = client.measure(9)
                     elif sensor_type == "DSP_DC_VOLTAGE":
-                        self.data[sensor_type] = client.measure(23)
+                        data[sensor_type] = client.measure(23)
                     elif sensor_type == "DSP_DC_CURRENT":
-                        self.data[sensor_type] = client.measure(25)
+                        data[sensor_type] = client.measure(25)
                     elif sensor_type == "DSP_DC_POWER":
-                        self.data[sensor_type] = client.measure(12)
+                        data[sensor_type] = client.measure(12)
                     elif sensor_type == "DSP_TEMPERATURE":
-                        self.data[sensor_type] = client.measure(21)
+                        data[sensor_type] = client.measure(21)
                     elif sensor_type == "DSP_RADIATOR_TEMP":
-                        self.data[sensor_type] = client.measure(22)
+                        data[sensor_type] = client.measure(22)
                     elif sensor_type == "DSP_AMBIENT_TEMP":
-                        self.data[sensor_type] = client.measure(15)
+                        data[sensor_type] = client.measure(15)
                     elif sensor_type == "DSP_MPPT_POWER":
-                        self.data[sensor_type] = client.measure(16)
+                        data[sensor_type] = client.measure(16)
                     elif sensor_type == "DSP_ISOLATION":
-                        self.data[sensor_type] = client.measure(30)
+                        data[sensor_type] = client.measure(30)
                     elif sensor_type == "DSP_OPERATING_HOURS":
-                        self.data[sensor_type] = client.measure(18)
+                        data[sensor_type] = client.measure(18)
                     elif sensor_type == "DSP_SERIAL_NUMBER":
-                        self.data[sensor_type] = client.serial_number()
+                        data[sensor_type] = client.serial_number()
                     elif sensor_type == "DSP_VERSION":
-                        self.data[sensor_type] = client.version()
+                        data[sensor_type] = client.version()
                     elif sensor_type == "DSP_MODEL":
-                        self.data[sensor_type] = None  # aurorapy hat keine model()-Methode
+                        data[sensor_type] = None  # aurorapy hat keine model()-Methode
                     elif sensor_type == "DSP_EVENTS":
-                        self.data[sensor_type] = client.measure(21)
+                        data[sensor_type] = client.measure(21)
                     elif sensor_type == "DSP_LAST_ERROR":
-                        self.data[sensor_type] = client.measure(22)
+                        data[sensor_type] = client.measure(22)
                     elif sensor_type == "DSP_ALARMS":
-                        self.data[sensor_type] = client.measure(19)
+                        data[sensor_type] = client.measure(19)
                     elif sensor_type == "DSP_FAULT_CODE":
-                        self.data[sensor_type] = client.measure(20)
+                        data[sensor_type] = client.measure(20)
                     elif sensor_type == "DSP_STATUS":
-                        self.data[sensor_type] = client.measure(23)
+                        data[sensor_type] = client.measure(23)
                     elif sensor_type == "DSP_INPUT_2_VOLTAGE":
-                        self.data[sensor_type] = client.measure(26)
+                        data[sensor_type] = client.measure(26)
                     elif sensor_type == "DSP_INPUT_2_CURRENT":
-                        self.data[sensor_type] = client.measure(27)
+                        data[sensor_type] = client.measure(27)
                     elif sensor_type == "DSP_VBULK":
-                        self.data[sensor_type] = client.measure(5)
+                        data[sensor_type] = client.measure(5)
                     elif sensor_type == "DSP_ILEAK_DC_DC":
-                        self.data[sensor_type] = client.measure(6)
+                        data[sensor_type] = client.measure(6)
                     elif sensor_type == "DSP_ILEAK_INVERTER":
-                        self.data[sensor_type] = client.measure(7)
+                        data[sensor_type] = client.measure(7)
                     elif sensor_type == "DSP_PIN1":
-                        self.data[sensor_type] = client.measure(8)
+                        data[sensor_type] = client.measure(8)
                     elif sensor_type == "DSP_PIN2":
-                        self.data[sensor_type] = client.measure(9)
+                        data[sensor_type] = client.measure(9)
                     elif sensor_type == "DSP_GRID_VOLTAGE_DC_DC":
-                        self.data[sensor_type] = client.measure(28)
+                        data[sensor_type] = client.measure(28)
                     elif sensor_type == "DSP_GRID_FREQUENCY_DC_DC":
-                        self.data[sensor_type] = client.measure(29)
+                        data[sensor_type] = client.measure(29)
                     elif sensor_type == "DSP_VBULK_DC_DC":
-                        self.data[sensor_type] = client.measure(31)
+                        data[sensor_type] = client.measure(31)
                     elif sensor_type == "DSP_AVERAGE_GRID_VOLTAGE":
-                        self.data[sensor_type] = client.measure(32)
+                        data[sensor_type] = client.measure(32)
                     elif sensor_type == "DSP_VBULK_MID":
-                        self.data[sensor_type] = client.measure(33)
+                        data[sensor_type] = client.measure(33)
                     elif sensor_type == "DSP_POWER_PEAK":
-                        self.data[sensor_type] = client.measure(34)
+                        data[sensor_type] = client.measure(34)
                     elif sensor_type == "DSP_POWER_PEAK_TODAY":
-                        self.data[sensor_type] = client.measure(35)
+                        data[sensor_type] = client.measure(35)
                     elif sensor_type == "DSP_GRID_VOLTAGE_NEUTRAL":
-                        self.data[sensor_type] = client.measure(36)
+                        data[sensor_type] = client.measure(36)
                     elif sensor_type == "DSP_GRID_VOLTAGE_NEUTRAL_PHASE":
-                        self.data[sensor_type] = client.measure(38)
+                        data[sensor_type] = client.measure(38)
                     elif sensor_type == "DSP_WIND_GENERATOR_FREQUENCY":
-                        self.data[sensor_type] = client.measure(37)
+                        data[sensor_type] = client.measure(37)
                     elif sensor_type == "DSP_GRID_CURRENT_PHASE_R":
-                        self.data[sensor_type] = client.measure(39)
+                        data[sensor_type] = client.measure(39)
                     elif sensor_type == "DSP_GRID_CURRENT_PHASE_S":
-                        self.data[sensor_type] = client.measure(40)
+                        data[sensor_type] = client.measure(40)
                     elif sensor_type == "DSP_GRID_CURRENT_PHASE_T":
-                        self.data[sensor_type] = client.measure(41)
+                        data[sensor_type] = client.measure(41)
                     elif sensor_type == "DSP_FREQUENCY_PHASE_R":
-                        self.data[sensor_type] = client.measure(42)
+                        data[sensor_type] = client.measure(42)
                     elif sensor_type == "DSP_FREQUENCY_PHASE_S":
-                        self.data[sensor_type] = client.measure(43)
+                        data[sensor_type] = client.measure(43)
                     elif sensor_type == "DSP_FREQUENCY_PHASE_T":
-                        self.data[sensor_type] = client.measure(44)
+                        data[sensor_type] = client.measure(44)
                     elif sensor_type == "DSP_VBULK_PLUS":
-                        self.data[sensor_type] = client.measure(45)
+                        data[sensor_type] = client.measure(45)
                     elif sensor_type == "DSP_VBULK_MINUS":
-                        self.data[sensor_type] = client.measure(46)
+                        data[sensor_type] = client.measure(46)
                     elif sensor_type == "DSP_SUPERVISOR_TEMPERATURE":
-                        self.data[sensor_type] = client.measure(47)
+                        data[sensor_type] = client.measure(47)
                     elif sensor_type == "DSP_ALIM_TEMPERATURE":
-                        self.data[sensor_type] = client.measure(48)
+                        data[sensor_type] = client.measure(48)
                     elif sensor_type == "DSP_HEAT_SINK_TEMPERATURE":
-                        self.data[sensor_type] = client.measure(49)
+                        data[sensor_type] = client.measure(49)
                     elif sensor_type == "DSP_TEMPERATURE_1":
-                        self.data[sensor_type] = client.measure(50)
+                        data[sensor_type] = client.measure(50)
                     elif sensor_type == "DSP_TEMPERATURE_2":
-                        self.data[sensor_type] = client.measure(51)
+                        data[sensor_type] = client.measure(51)
                     elif sensor_type == "DSP_TEMPERATURE_3":
-                        self.data[sensor_type] = client.measure(52)
+                        data[sensor_type] = client.measure(52)
                     elif sensor_type == "DSP_FAN_1_SPEED":
-                        self.data[sensor_type] = client.measure(53)
+                        data[sensor_type] = client.measure(53)
                     elif sensor_type == "DSP_FAN_2_SPEED":
-                        self.data[sensor_type] = client.measure(54)
+                        data[sensor_type] = client.measure(54)
                     elif sensor_type == "DSP_FAN_3_SPEED":
-                        self.data[sensor_type] = client.measure(55)
+                        data[sensor_type] = client.measure(55)
                     elif sensor_type == "DSP_FAN_4_SPEED":
-                        self.data[sensor_type] = client.measure(56)
+                        data[sensor_type] = client.measure(56)
                     elif sensor_type == "DSP_FAN_5_SPEED":
-                        self.data[sensor_type] = client.measure(57)
+                        data[sensor_type] = client.measure(57)
                     elif sensor_type == "DSP_POWER_SATURATION_LIMIT":
-                        self.data[sensor_type] = client.measure(58)
+                        data[sensor_type] = client.measure(58)
                     elif sensor_type == "DSP_RIFERIMENTO_ANELLO_BULK":
-                        self.data[sensor_type] = client.measure(59)
+                        data[sensor_type] = client.measure(59)
                     elif sensor_type == "DSP_VPANEL_MICRO":
-                        self.data[sensor_type] = client.measure(60)
+                        data[sensor_type] = client.measure(60)
                     elif sensor_type == "DSP_GRID_VOLTAGE_PHASE_R":
-                        self.data[sensor_type] = client.measure(61)
+                        data[sensor_type] = client.measure(61)
                     elif sensor_type == "DSP_GRID_VOLTAGE_PHASE_S":
-                        self.data[sensor_type] = client.measure(62)
+                        data[sensor_type] = client.measure(62)
                     elif sensor_type == "DSP_GRID_VOLTAGE_PHASE_T":
-                        self.data[sensor_type] = client.measure(63)
+                        data[sensor_type] = client.measure(63)
                 except AuroraError as e:
-                    self.data[sensor_type] = None
+                    data[sensor_type] = None
                     _LOGGER.error("Fehler bei %s: %s", sensor_type, e)
                 except Exception as e:
-                    self.data[sensor_type] = None
+                    data[sensor_type] = None
                     _LOGGER.error("Allgemeiner Fehler bei %s: %s", sensor_type, e)
 
             client.close()
         except Exception as e:
             raise UpdateFailed(f"Fehler bei der Kommunikation: {e}") from e
+        return data
         
     
 class AuroraSensor(SensorEntity):
@@ -494,8 +587,8 @@ class AuroraSensorBase(SensorEntity):
         self._port = port
         self._slave_id = slave_id
         """self._name = f"{name} {sensor_type.split('_')[-1].title()}"""
-        self._name = f"Wechselrichter {slave_id} - {sensor_type.split('_')[-1].lower()}"
-        self._attr_friendly_name = f"Wechselrichter {slave_id} - {sensor_type.split('_')[-1].lower()}"
+        self._attr_name = f"WR {slave_id} {SENSOR_NAMES.get(sensor_type, sensor_type)}"
+        self._attr_friendly_name = f"WR {slave_id} {SENSOR_NAMES.get(sensor_type, sensor_type)}"
         self._sensor_type = sensor_type
         self._unit = unit
         self._factor = factor
