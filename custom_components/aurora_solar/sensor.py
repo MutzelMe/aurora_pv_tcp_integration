@@ -545,7 +545,7 @@ class AuroraSensor(SensorEntity):
         self._name = name
         self._text_mapping = text_mapping
         self._is_string = is_string
-        self._attr_unique_id = f"aurora_{coordinator._slave_id}_{sensor_type.lower()}"
+        self._attr_unique_id = f"aurora_wr_{coordinator._slave_id}_{sensor_type.lower()}"
         self._attr_icon = ICON_MAPPING.get(sensor_type, "mdi:help")
 
     @property
@@ -631,7 +631,7 @@ class AuroraSensorBase(SensorEntity):
         self._text_mapping = text_mapping
         self._state = None
         self._attr_native_unit_of_measurement = unit if not is_string else None
-        self._attr_unique_id = f"aurora_{slave_id}_{sensor_type.lower()}"
+        self._attr_unique_id = f"aurora_wr_{slave_id}_{sensor_type.lower()}"
         self._attr_icon = ICON_MAPPING.get(sensor_type, "mdi:help")
 
     @property
