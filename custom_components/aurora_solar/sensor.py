@@ -321,6 +321,11 @@ COMMANDS = {
     "DSP_PV2_CURRENT": b"\x63\x33\x0D",
     "DSP_PV1_POWER": b"\x64\x33\x0D",
     "DSP_PV2_POWER": b"\x65\x33\x0D",
+    "DSP_GLOBAL_STATE": None,
+    "DSP_INVERTER_STATE": None,
+    "DSP_DCDC_CH1_STATE": None,
+    "DSP_DCDC_CH2_STATE": None,
+    "DSP_ALARM_STATE": None,
 }
 
 async def async_setup_entry(
