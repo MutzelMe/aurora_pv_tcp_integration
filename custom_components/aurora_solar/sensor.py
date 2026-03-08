@@ -4,6 +4,7 @@ import logging
 import time
 from datetime import timedelta
 from aurorapy.client import AuroraTCPClient, AuroraError
+from aurorapy.mapping import Mapping
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
@@ -19,9 +20,9 @@ from .const import DOMAIN, CONF_SLAVE_ID
 
 _LOGGER = logging.getLogger(__name__)
 
-# Icon-Mapping für Sensoren
+# Icon mapping for sensors
 ICON_MAPPING = {
-    # Leistung & Energie
+    # Power & Energy
     "DSP_GRID_POWER":                "mdi:solar-power",
     "DSP_DC_POWER":                  "mdi:solar-power",
     "DSP_MPPT_POWER":                "mdi:solar-power",
@@ -34,7 +35,7 @@ ICON_MAPPING = {
     "DSP_DAILY_ENERGY":              "mdi:solar-power-variant",
     "DSP_TOTAL_ENERGY":              "mdi:counter",
     "DSP_EFFICIENCY":                "mdi:percent",
-    # Spannung
+    # Voltage
     "DSP_GRID_VOLTAGE":              "mdi:flash",
     "DSP_AVERAGE_GRID_VOLTAGE":      "mdi:flash",
     "DSP_AC_VOLTAGE_PHASE":          "mdi:flash",
@@ -42,39 +43,38 @@ ICON_MAPPING = {
     "DSP_DC_VOLTAGE2":               "mdi:flash-outline",
     "DSP_PV1_VOLTAGE":               "mdi:solar-panel",
     "DSP_PV2_VOLTAGE":               "mdi:solar-panel",
-    # Strom
+    # Current
     "DSP_GRID_CURRENT":              "mdi:current-ac",
     "DSP_DC_CURRENT":                "mdi:current-dc",
     "DSP_DC_CURRENT2":               "mdi:current-dc",
     "DSP_PV1_CURRENT":               "mdi:solar-panel",
     "DSP_PV2_CURRENT":               "mdi:solar-panel",
-    # Frequenz & Netz
+    # Frequency & Grid
     "DSP_GRID_FREQUENCY":            "mdi:sine-wave",
     "DSP_PF":                        "mdi:angle-acute",
-    # Temperatur
+    # Temperature
     "DSP_TEMPERATURE":               "mdi:thermometer",
     "DSP_RADIATOR_TEMP":             "mdi:thermometer",
     "DSP_BOOSTER_TEMP":              "mdi:thermometer",
     "DSP_IPM_TEMP":                  "mdi:thermometer",
     "DSP_DSP_TEMP":                  "mdi:thermometer",
-    # Betrieb & Zähler
+    # Operation & Counters
     "DSP_OPERATION_TIME":            "mdi:clock-outline",
     "DSP_GRID_RELAY_COUNTER":        "mdi:counter",
     "DSP_DC_DISCONNECT_COUNTER":     "mdi:counter",
-    # Diagnose
+    # Diagnostics
     "DSP_ALARMS":                    "mdi:alert",
     "DSP_LAST_ALARM":                "mdi:alert-circle-outline",
     "DSP_FAULT_CODE":                "mdi:alert-circle",
     "DSP_LAST_FAULT":                "mdi:alert-circle-outline",
     "DSP_STATUS":                    "mdi:information",
     "DSP_EVENTS":                    "mdi:calendar-clock",
-    # Gerätedaten
+    # Device Data
     "DSP_MODEL":                     "mdi:information-outline",
     "DSP_SERIAL":                    "mdi:barcode",
     "DSP_FW_VERSION":                "mdi:chip",
     "DSP_DSP_VERSION":               "mdi:chip",
 }
-
 
 # --- MAPPINGS FÜR LESBARE TEXTE ---
 ALARM_MESSAGES = {
