@@ -73,6 +73,12 @@ ICON_MAPPING = {
     "DSP_LAST_FAULT": "mdi:alert-circle-outline",
     "DSP_STATUS": "mdi:information",
     "DSP_EVENTS": "mdi:calendar-clock",
+    # STATES
+    "DSP_GLOBAL_STATE": "mdi:state-machine",
+    "DSP_INVERTER_STATE": "mdi:state-machine",
+    "DSP_DCDC_CH1_STATE": "mdi:state-machine",
+    "DSP_DCDC_CH2_STATE": "mdi:state-machine",
+    "DSP_ALARM_STATE": "mdi:alert",
     # Device Data
     "DSP_MODEL": "mdi:information-outline",
     "DSP_SERIAL": "mdi:barcode",
@@ -126,6 +132,11 @@ UNITS = {
     "DSP_PV2_CURRENT": "A",
     "DSP_PV1_POWER": "W",
     "DSP_PV2_POWER": "W",
+    "DSP_GLOBAL_STATE": "",
+    "DSP_INVERTER_STATE": "",
+    "DSP_DCDC_CH1_STATE": "",
+    "DSP_DCDC_CH2_STATE": "",
+    "DSP_ALARM_STATE": "",
 }
 
 FACTORS = {
@@ -167,6 +178,11 @@ FACTORS = {
     "DSP_PV2_CURRENT": 0.1,
     "DSP_PV1_POWER": 1,
     "DSP_PV2_POWER": 1,
+    "DSP_GLOBAL_STATE": 1,
+    "DSP_INVERTER_STATE": 1,
+    "DSP_DCDC_CH1_STATE": 1,
+    "DSP_DCDC_CH2_STATE": 1,
+    "DSP_ALARM_STATE": 1,
 }
 
 # --- HUMAN READABLE SENSOR NAMES ---
@@ -258,6 +274,11 @@ SENSOR_NAMES = {
     "DSP_GRID_VOLTAGE_PHASE_R": "Phase R Grid Voltage",
     "DSP_GRID_VOLTAGE_PHASE_S": "Phase S Grid Voltage",
     "DSP_GRID_VOLTAGE_PHASE_T": "Phase T Grid Voltage",
+    "DSP_GLOBAL_STATE": "Global State",
+    "DSP_INVERTER_STATE": "Inverter State",
+    "DSP_DCDC_CH1_STATE": "DCDC Channel 1 State",
+    "DSP_DCDC_CH2_STATE": "DSP_DCDC Channel 2 State",
+    "DSP_ALARM_STATE": "Alarm State",
 }
 
 # --- COMPLETE COMMAND LIST (INCLUDING ALL SENSORS) ---
@@ -315,8 +336,52 @@ async def async_setup_entry(
 
     coordinator = AuroraDataUpdateCoordinator(hass, host, port, slave_id)
 
-    # Create all sensors for this inverter
+    # Manuell hinzugefügte Status-Sensoren
     sensors = [
+        AuroraSensor(
+            coordinator=coordinator,
+            sensor_type="DSP_GLOBAL_STATE",
+            unit=UNITS["DSP_GLOBAL_STATE"],
+            factor=FACTORS["DSP_GLOBAL_STATE"],
+            name=f"INV {slave_id} {SENSOR_NAMES['DSP_GLOBAL_STATE']}",
+            is_string=True,
+        ),
+        AuroraSensor(
+            coordinator=coordinator,
+            sensor_type="DSP_INVERTER_STATE",
+            unit=UNITS["DSP_INVERTER_STATE"],
+            factor=FACTORS["DSP_INVERTER_STATE"],
+            name=f"INV {slave_id} {SENSOR_NAMES['DSP_INVERTER_STATE']}",
+            is_string=True,
+        ),
+        AuroraSensor(
+            coordinator=coordinator,
+            sensor_type="DSP_DCDC_CH1_STATE",
+            unit=UNITS["DSP_DCDC_CH1_STATE"],
+            factor=FACTORS["DSP_DCDC_CH1_STATE"],
+            name=f"INV {slave_id} {SENSOR_NAMES['DSP_DCDC_CH1_STATE']}",
+            is_string=True,
+        ),
+        AuroraSensor(
+            coordinator=coordinator,
+            sensor_type="DSP_DCDC_CH2_STATE",
+            unit=UNITS["DSP_DCDC_CH2_STATE"],
+            factor=FACTORS["DSP_DCDC_CH2_STATE"],
+            name=f"INV {slave_id} {SENSOR_NAMES['DSP_DCDC_CH2_STATE']}",
+            is_string=True,
+        ),
+        AuroraSensor(
+            coordinator=coordinator,
+            sensor_type="DSP_ALARM_STATE",
+            unit=UNITS["DSP_ALARM_STATE"],
+            factor=FACTORS["DSP_ALARM_STATE"],
+            name=f"INV {slave_id} {SENSOR_NAMES['DSP_ALARM_STATE']}",
+            is_string=True,
+        ),
+    ]
+
+    # Sensoren aus COMMANDS (Schleife)
+    sensors += [
         AuroraSensor(
             coordinator=coordinator,
             sensor_type=st,
@@ -362,6 +427,13 @@ class AuroraDataUpdateCoordinator(DataUpdateCoordinator):
             client = AuroraTCPClient(ip=self._host, port=self._port, address=self._slave_id, timeout=20)
             client.connect()
 
+            # Status request
+            data["DSP_GLOBAL_STATE"] = client.state(1)    # Global State
+            data["DSP_INVERTER_STATE"] = client.state(2)  # Inverter State
+            data["DSP_DCDC_CH1_STATE"] = client.state(3)  # DCDC State Channel 1
+            data["DSP_DCDC_CH2_STATE"] = client.state(4)  # DCDC State Channel 2
+            data["DSP_ALARM_STATE"] = client.state(5)     # Alarm State
+                
             for sensor_type, command in COMMANDS.items():
                 try:                   
                     if sensor_type == "DSP_GRID_POWER":
