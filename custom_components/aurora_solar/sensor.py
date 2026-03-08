@@ -81,7 +81,8 @@ ICON_MAPPING = {
     "DSP_ALARM_STATE": "mdi:alert",
     # Device Data
     "DSP_MODEL": "mdi:information-outline",
-    "DSP_SERIAL": "mdi:barcode",
+    #"DSP_SERIAL": "mdi:barcode",
+    "DSP_SERIAL_NUMBER": "mdi:barcode",
     "DSP_FW_VERSION": "mdi:chip",
     "DSP_DSP_VERSION": "mdi:chip",
 }
@@ -118,7 +119,7 @@ UNITS = {
     "DSP_EVENTS": "",
     "DSP_FAULT_CODE": "",
     "DSP_MODEL": "",
-    "DSP_SERIAL": "",
+    "DSP_SERIAL_NUMBER": "",
     "DSP_FW_VERSION": "",
     "DSP_DSP_VERSION": "",
     "DSP_LAST_ALARM": "date",
@@ -164,7 +165,7 @@ FACTORS = {
     "DSP_EVENTS": 1,
     "DSP_FAULT_CODE": 1,
     "DSP_MODEL": 1,
-    "DSP_SERIAL": 1,
+    "DSP_SERIAL_NUMBER": 1,
     "DSP_FW_VERSION": 1,
     "DSP_DSP_VERSION": 1,
     "DSP_LAST_ALARM": 1,
@@ -211,7 +212,7 @@ SENSOR_NAMES = {
     "DSP_EVENTS": "Events",
     "DSP_FAULT_CODE": "Fault Code",
     "DSP_MODEL": "Model",
-    "DSP_SERIAL": "Serial Number",
+    "DSP_SERIAL_NUMBER": "Serial Number",
     "DSP_FW_VERSION": "Firmware Version",
     "DSP_DSP_VERSION": "DSP Version",
     "DSP_LAST_ALARM": "Last Alarm",
@@ -307,7 +308,7 @@ COMMANDS = {
     "DSP_EVENTS": b"\x52\x33\x0D",
     "DSP_FAULT_CODE": b"\x53\x33\x0D",
     "DSP_MODEL": b"\x55\x33\x0D",    # used via client.pn()
-    "DSP_SERIAL": b"\x56\x33\x0D",
+    #"DSP_SERIAL": b"\x56\x33\x0D",
     "DSP_FW_VERSION": b"\x57\x33\x0D",
     "DSP_DSP_VERSION": b"\x58\x33\x0D",
     "DSP_LAST_ALARM": b"\x59\x33\x0D",
@@ -326,6 +327,7 @@ COMMANDS = {
     "DSP_DCDC_CH1_STATE": None,
     "DSP_DCDC_CH2_STATE": None,
     "DSP_ALARM_STATE": None,
+    "DSP_SERIAL_NUMBER": NONE,
 }
 
 async def async_setup_entry(
@@ -401,7 +403,7 @@ async def async_setup_entry(
             ),
             is_string=st in [
                 "DSP_ALARMS", "DSP_STATUS", "DSP_EVENTS",
-                "DSP_FAULT_CODE", "DSP_MODEL", "DSP_SERIAL",
+                "DSP_FAULT_CODE", "DSP_MODEL", "DSP_SERIAL_NUMBER",
                 "DSP_FW_VERSION", "DSP_DSP_VERSION"
             ],
         )
