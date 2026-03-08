@@ -20,87 +20,73 @@ from .const import DOMAIN, CONF_SLAVE_ID
 
 _LOGGER = logging.getLogger(__name__)
 
+# Use aurorapy mappings:
+ALARM_MESSAGES = Mapping.GLOBAL_STATES
+STATUS_MESSAGES = Mapping.GLOBAL_STATES
+
 # Icon mapping for sensors
 ICON_MAPPING = {
     # Power & Energy
-    "DSP_GRID_POWER":                "mdi:solar-power",
-    "DSP_DC_POWER":                  "mdi:solar-power",
-    "DSP_MPPT_POWER":                "mdi:solar-power",
-    "DSP_POWER_PEAK":                "mdi:solar-power",
-    "DSP_POWER_PEAK_TODAY":          "mdi:solar-power",
-    "DSP_PIN1":                      "mdi:solar-power",
-    "DSP_PIN2":                      "mdi:solar-power",
-    "DSP_PV1_POWER":                 "mdi:solar-power",
-    "DSP_PV2_POWER":                 "mdi:solar-power",
-    "DSP_DAILY_ENERGY":              "mdi:solar-power-variant",
-    "DSP_TOTAL_ENERGY":              "mdi:counter",
-    "DSP_EFFICIENCY":                "mdi:percent",
+    "DSP_GRID_POWER": "mdi:solar-power",
+    "DSP_DC_POWER": "mdi:solar-power",
+    "DSP_MPPT_POWER": "mdi:solar-power",
+    "DSP_POWER_PEAK": "mdi:solar-power",
+    "DSP_POWER_PEAK_TODAY": "mdi:solar-power",
+    "DSP_PIN1": "mdi:solar-power",
+    "DSP_PIN2": "mdi:solar-power",
+    "DSP_PV1_POWER": "mdi:solar-power",
+    "DSP_PV2_POWER": "mdi:solar-power",
+    "DSP_DAILY_ENERGY": "mdi:solar-power-variant",
+    "DSP_TOTAL_ENERGY": "mdi:counter",
+    "DSP_EFFICIENCY": "mdi:percent",
     # Voltage
-    "DSP_GRID_VOLTAGE":              "mdi:flash",
-    "DSP_AVERAGE_GRID_VOLTAGE":      "mdi:flash",
-    "DSP_AC_VOLTAGE_PHASE":          "mdi:flash",
-    "DSP_DC_VOLTAGE":                "mdi:flash-outline",
-    "DSP_DC_VOLTAGE2":               "mdi:flash-outline",
-    "DSP_PV1_VOLTAGE":               "mdi:solar-panel",
-    "DSP_PV2_VOLTAGE":               "mdi:solar-panel",
+    "DSP_GRID_VOLTAGE": "mdi:flash",
+    "DSP_AVERAGE_GRID_VOLTAGE": "mdi:flash",
+    "DSP_AC_VOLTAGE_PHASE": "mdi:flash",
+    "DSP_DC_VOLTAGE": "mdi:flash-outline",
+    "DSP_DC_VOLTAGE2": "mdi:flash-outline",
+    "DSP_PV1_VOLTAGE": "mdi:solar-panel",
+    "DSP_PV2_VOLTAGE": "mdi:solar-panel",
     # Current
-    "DSP_GRID_CURRENT":              "mdi:current-ac",
-    "DSP_DC_CURRENT":                "mdi:current-dc",
-    "DSP_DC_CURRENT2":               "mdi:current-dc",
-    "DSP_PV1_CURRENT":               "mdi:solar-panel",
-    "DSP_PV2_CURRENT":               "mdi:solar-panel",
+    "DSP_GRID_CURRENT": "mdi:current-ac",
+    "DSP_DC_CURRENT": "mdi:current-dc",
+    "DSP_DC_CURRENT2": "mdi:current-dc",
+    "DSP_PV1_CURRENT": "mdi:solar-panel",
+    "DSP_PV2_CURRENT": "mdi:solar-panel",
     # Frequency & Grid
-    "DSP_GRID_FREQUENCY":            "mdi:sine-wave",
-    "DSP_PF":                        "mdi:angle-acute",
+    "DSP_GRID_FREQUENCY": "mdi:sine-wave",
+    "DSP_PF": "mdi:angle-acute",
     # Temperature
-    "DSP_TEMPERATURE":               "mdi:thermometer",
-    "DSP_RADIATOR_TEMP":             "mdi:thermometer",
-    "DSP_BOOSTER_TEMP":              "mdi:thermometer",
-    "DSP_IPM_TEMP":                  "mdi:thermometer",
-    "DSP_DSP_TEMP":                  "mdi:thermometer",
+    "DSP_TEMPERATURE": "mdi:thermometer",
+    "DSP_RADIATOR_TEMP": "mdi:thermometer",
+    "DSP_BOOSTER_TEMP": "mdi:thermometer",
+    "DSP_IPM_TEMP": "mdi:thermometer",
+    "DSP_DSP_TEMP": "mdi:thermometer",
     # Operation & Counters
-    "DSP_OPERATION_TIME":            "mdi:clock-outline",
-    "DSP_GRID_RELAY_COUNTER":        "mdi:counter",
-    "DSP_DC_DISCONNECT_COUNTER":     "mdi:counter",
+    "DSP_OPERATION_TIME": "mdi:clock-outline",
+    "DSP_GRID_RELAY_COUNTER": "mdi:counter",
+    "DSP_DC_DISCONNECT_COUNTER": "mdi:counter",
     # Diagnostics
-    "DSP_ALARMS":                    "mdi:alert",
-    "DSP_LAST_ALARM":                "mdi:alert-circle-outline",
-    "DSP_FAULT_CODE":                "mdi:alert-circle",
-    "DSP_LAST_FAULT":                "mdi:alert-circle-outline",
-    "DSP_STATUS":                    "mdi:information",
-    "DSP_EVENTS":                    "mdi:calendar-clock",
+    "DSP_ALARMS": "mdi:alert",
+    "DSP_LAST_ALARM": "mdi:alert-circle-outline",
+    "DSP_FAULT_CODE": "mdi:alert-circle",
+    "DSP_LAST_FAULT": "mdi:alert-circle-outline",
+    "DSP_STATUS": "mdi:information",
+    "DSP_EVENTS": "mdi:calendar-clock",
     # Device Data
-    "DSP_MODEL":                     "mdi:information-outline",
-    "DSP_SERIAL":                    "mdi:barcode",
-    "DSP_FW_VERSION":                "mdi:chip",
-    "DSP_DSP_VERSION":               "mdi:chip",
-}
-
-# --- MAPPINGS FÜR LESBARE TEXTE ---
-ALARM_MESSAGES = {
-    0x0000: "Keine Alarme",
-    0x0001: "Überlastung",
-    0x0002: "Netzspannung zu hoch",
-    0x0004: "Isolationsfehler",
-    0x0008: "Temperatur zu hoch",
-    0x0010: "Netzfrequenz außer Toleranz",
-}
-
-STATUS_MESSAGES = {
-    0x00: "Aus",
-    0x01: "Bereit",
-    0x02: "Eingeschaltet",
-    0x03: "Fehler",
-    0x04: "Wartung",
+    "DSP_MODEL": "mdi:information-outline",
+    "DSP_SERIAL": "mdi:barcode",
+    "DSP_FW_VERSION": "mdi:chip",
+    "DSP_DSP_VERSION": "mdi:chip",
 }
 
 FAULT_MESSAGES = {
-    0x0000: "Kein Fehler",
-    0x0001: "Kurzschluss",
-    0x0002: "Kommunikationsfehler",
+    0x0000: "No Fault",
+    0x0001: "Short Circuit",
+    0x0002: "Communication Error",
 }
 
-# --- EINHEITEN UND SKALIERUNGSFAKTOREN ---
+# --- SCALE FACTORS AND UNITS ---
 UNITS = {
     "DSP_GRID_POWER": "W",
     "DSP_DAILY_ENERGY": "Wh",
@@ -129,8 +115,8 @@ UNITS = {
     "DSP_SERIAL": "",
     "DSP_FW_VERSION": "",
     "DSP_DSP_VERSION": "",
-    "DSP_LAST_ALARM": "datum",
-    "DSP_LAST_FAULT": "datum",
+    "DSP_LAST_ALARM": "date",
+    "DSP_LAST_FAULT": "date",
     "DSP_OPERATION_TIME": "h",
     "DSP_GRID_RELAY_COUNTER": "",
     "DSP_DC_DISCONNECT_COUNTER": "",
@@ -183,99 +169,98 @@ FACTORS = {
     "DSP_PV2_POWER": 1,
 }
 
-# --- LESBARE SENSOR-NAMEN ---
+# --- HUMAN READABLE SENSOR NAMES ---
 SENSOR_NAMES = {
-    "DSP_GRID_POWER":                "Netzleistung",
-    "DSP_DAILY_ENERGY":              "Tagesenergie",
-    "DSP_TOTAL_ENERGY":              "Gesamtenergie",
-    "DSP_GRID_VOLTAGE":              "Netzspannung",
-    "DSP_GRID_CURRENT":              "Netzstrom",
-    "DSP_GRID_FREQUENCY":            "Netzfrequenz",
-    "DSP_TEMPERATURE":               "Temperatur",
-    "DSP_DC_VOLTAGE":                "DC-Spannung",
-    "DSP_DC_CURRENT":                "DC-Strom",
-    "DSP_DC_POWER":                  "DC-Leistung",
-    "DSP_EFFICIENCY":                "Wirkungsgrad",
-    "DSP_PF":                        "Leistungsfaktor",
-    "DSP_AC_VOLTAGE_PHASE":          "AC-Phasenspannung",
-    "DSP_DC_VOLTAGE2":               "DC-Spannung 2",
-    "DSP_DC_CURRENT2":               "DC-Strom 2",
-    "DSP_RADIATOR_TEMP":             "Kühlkörper-Temp",
-    "DSP_BOOSTER_TEMP":              "Booster-Temp",
-    "DSP_IPM_TEMP":                  "IPM-Temp",
-    "DSP_DSP_TEMP":                  "DSP-Temp",
-    "DSP_ALARMS":                    "Alarme",
-    "DSP_STATUS":                    "Status",
-    "DSP_EVENTS":                    "Ereignisse",
-    "DSP_FAULT_CODE":                "Fehlercode",
-    "DSP_MODEL":                     "Modell",
-    "DSP_SERIAL":                    "Seriennummer",
-    "DSP_FW_VERSION":                "FW-Version",
-    "DSP_DSP_VERSION":               "DSP-Version",
-    "DSP_LAST_ALARM":                "Letzter Alarm",
-    "DSP_LAST_FAULT":                "Letzter Fehler",
-    "DSP_OPERATION_TIME":            "Betriebsstunden",
-    "DSP_GRID_RELAY_COUNTER":        "Netzrelais-Zähler",
-    "DSP_DC_DISCONNECT_COUNTER":     "DC-Trenn-Zähler",
-    "DSP_PV1_VOLTAGE":               "PV1-Spannung",
-    "DSP_PV1_CURRENT":               "PV1-Strom",
-    "DSP_PV2_VOLTAGE":               "PV2-Spannung",
-    "DSP_PV2_CURRENT":               "PV2-Strom",
-    "DSP_PV1_POWER":                 "PV1-Leistung",
-    "DSP_PV2_POWER":                 "PV2-Leistung",
-    "DSP_AMBIENT_TEMP":              "Umgebungstemperatur",
-    "DSP_MPPT_POWER":                "MPPT-Leistung",
-    "DSP_ISOLATION":                 "Isolation",
-    "DSP_OPERATING_HOURS":           "Betriebsstunden",
-    "DSP_SERIAL_NUMBER":             "Seriennummer",
-    "DSP_VERSION":                   "Version",
-    "DSP_EVENTS":                    "Ereignisse",
-    "DSP_LAST_ERROR":                "Letzter Fehler",
-    "DSP_INPUT_2_VOLTAGE":           "Eingang-2-Spannung",
-    "DSP_INPUT_2_CURRENT":           "Eingang-2-Strom",
-    "DSP_VBULK":                     "Bulk-Spannung",
-    "DSP_ILEAK_DC_DC":               "Leckstrom DC/DC",
-    "DSP_ILEAK_INVERTER":            "Leckstrom Wechselrichter",
-    "DSP_PIN1":                      "Eingangsleistung 1",
-    "DSP_PIN2":                      "Eingangsleistung 2",
-    "DSP_GRID_VOLTAGE_DC_DC":        "Netzspannung DC/DC",
-    "DSP_GRID_FREQUENCY_DC_DC":      "Netzfrequenz DC/DC",
-    "DSP_VBULK_DC_DC":               "Bulk-Spannung DC/DC",
-    "DSP_AVERAGE_GRID_VOLTAGE":      "Mittl. Netzspannung",
-    "DSP_VBULK_MID":                 "Bulk-Spannung Mitte",
-    "DSP_POWER_PEAK":                "Spitzenleistung",
-    "DSP_POWER_PEAK_TODAY":          "Spitzenleistung heute",
-    "DSP_GRID_VOLTAGE_NEUTRAL":      "Netzspannung Neutral",
-    "DSP_GRID_VOLTAGE_NEUTRAL_PHASE":"Netzspannung Neutral-Phase",
-    "DSP_WIND_GENERATOR_FREQUENCY":  "Windgenerator-Frequenz",
-    "DSP_GRID_CURRENT_PHASE_R":      "Netzstrom Phase R",
-    "DSP_GRID_CURRENT_PHASE_S":      "Netzstrom Phase S",
-    "DSP_GRID_CURRENT_PHASE_T":      "Netzstrom Phase T",
-    "DSP_FREQUENCY_PHASE_R":         "Frequenz Phase R",
-    "DSP_FREQUENCY_PHASE_S":         "Frequenz Phase S",
-    "DSP_FREQUENCY_PHASE_T":         "Frequenz Phase T",
-    "DSP_VBULK_PLUS":                "Bulk-Spannung Plus",
-    "DSP_VBULK_MINUS":               "Bulk-Spannung Minus",
-    "DSP_SUPERVISOR_TEMPERATURE":    "Supervisor-Temp",
-    "DSP_ALIM_TEMPERATURE":          "Alim-Temp",
-    "DSP_HEAT_SINK_TEMPERATURE":     "Kühlkörper-Temp 2",
-    "DSP_TEMPERATURE_1":             "Temperatur 1",
-    "DSP_TEMPERATURE_2":             "Temperatur 2",
-    "DSP_TEMPERATURE_3":             "Temperatur 3",
-    "DSP_FAN_1_SPEED":               "Lüfter 1",
-    "DSP_FAN_2_SPEED":               "Lüfter 2",
-    "DSP_FAN_3_SPEED":               "Lüfter 3",
-    "DSP_FAN_4_SPEED":               "Lüfter 4",
-    "DSP_FAN_5_SPEED":               "Lüfter 5",
-    "DSP_POWER_SATURATION_LIMIT":    "Leistungssättigung",
-    "DSP_RIFERIMENTO_ANELLO_BULK":   "Bulk-Regelreferenz",
-    "DSP_VPANEL_MICRO":              "Panel-Mikro-Spannung",
-    "DSP_GRID_VOLTAGE_PHASE_R":      "Netzspannung Phase R",
-    "DSP_GRID_VOLTAGE_PHASE_S":      "Netzspannung Phase S",
-    "DSP_GRID_VOLTAGE_PHASE_T":      "Netzspannung Phase T",
+    "DSP_GRID_POWER": "Grid Power",
+    "DSP_DAILY_ENERGY": "Daily Energy",
+    "DSP_TOTAL_ENERGY": "Total Energy",
+    "DSP_GRID_VOLTAGE": "Grid Voltage",
+    "DSP_GRID_CURRENT": "Grid Current",
+    "DSP_GRID_FREQUENCY": "Grid Frequency",
+    "DSP_TEMPERATURE": "Temperature",
+    "DSP_DC_VOLTAGE": "DC Voltage",
+    "DSP_DC_CURRENT": "DC Current",
+    "DSP_DC_POWER": "DC Power",
+    "DSP_EFFICIENCY": "Efficiency",
+    "DSP_PF": "Power Factor",
+    "DSP_AC_VOLTAGE_PHASE": "AC Phase Voltage",
+    "DSP_DC_VOLTAGE2": "DC Voltage 2",
+    "DSP_DC_CURRENT2": "DC Current 2",
+    "DSP_RADIATOR_TEMP": "Radiator Temperature",
+    "DSP_BOOSTER_TEMP": "Booster Temperature",
+    "DSP_IPM_TEMP": "IPM Temperature",
+    "DSP_DSP_TEMP": "DSP Temperature",
+    "DSP_ALARMS": "Alarms",
+    "DSP_STATUS": "Status",
+    "DSP_EVENTS": "Events",
+    "DSP_FAULT_CODE": "Fault Code",
+    "DSP_MODEL": "Model",
+    "DSP_SERIAL": "Serial Number",
+    "DSP_FW_VERSION": "Firmware Version",
+    "DSP_DSP_VERSION": "DSP Version",
+    "DSP_LAST_ALARM": "Last Alarm",
+    "DSP_LAST_FAULT": "Last Fault",
+    "DSP_OPERATION_TIME": "Operation Time",
+    "DSP_GRID_RELAY_COUNTER": "Grid Relay Counter",
+    "DSP_DC_DISCONNECT_COUNTER": "DC Disconnect Counter",
+    "DSP_PV1_VOLTAGE": "PV1 Voltage",
+    "DSP_PV1_CURRENT": "PV1 Current",
+    "DSP_PV2_VOLTAGE": "PV2 Voltage",
+    "DSP_PV2_CURRENT": "PV2 Current",
+    "DSP_PV1_POWER": "PV1 Power",
+    "DSP_PV2_POWER": "PV2 Power",
+    "DSP_AMBIENT_TEMP": "Ambient Temperature",
+    "DSP_MPPT_POWER": "MPPT Power",
+    "DSP_ISOLATION": "Isolation Resistance",
+    "DSP_OPERATING_HOURS": "Operating Hours",
+    "DSP_SERIAL_NUMBER": "Serial Number",
+    "DSP_VERSION": "Version",
+    "DSP_LAST_ERROR": "Last Error",
+    "DSP_INPUT_2_VOLTAGE": "Input 2 Voltage",
+    "DSP_INPUT_2_CURRENT": "Input 2 Current",
+    "DSP_VBULK": "Bulk Voltage",
+    "DSP_ILEAK_DC_DC": "DC/DC Leakage Current",
+    "DSP_ILEAK_INVERTER": "Inverter Leakage Current",
+    "DSP_PIN1": "Input Power 1",
+    "DSP_PIN2": "Input Power 2",
+    "DSP_GRID_VOLTAGE_DC_DC": "DC/DC Grid Voltage",
+    "DSP_GRID_FREQUENCY_DC_DC": "DC/DC Grid Frequency",
+    "DSP_VBULK_DC_DC": "DC/DC Bulk Voltage",
+    "DSP_AVERAGE_GRID_VOLTAGE": "Average Grid Voltage",
+    "DSP_VBULK_MID": "Mid Bulk Voltage",
+    "DSP_POWER_PEAK": "Peak Power",
+    "DSP_POWER_PEAK_TODAY": "Today's Peak Power",
+    "DSP_GRID_VOLTAGE_NEUTRAL": "Neutral Grid Voltage",
+    "DSP_GRID_VOLTAGE_NEUTRAL_PHASE": "Neutral-Phase Grid Voltage",
+    "DSP_WIND_GENERATOR_FREQUENCY": "Wind Generator Frequency",
+    "DSP_GRID_CURRENT_PHASE_R": "Phase R Grid Current",
+    "DSP_GRID_CURRENT_PHASE_S": "Phase S Grid Current",
+    "DSP_GRID_CURRENT_PHASE_T": "Phase T Grid Current",
+    "DSP_FREQUENCY_PHASE_R": "Phase R Frequency",
+    "DSP_FREQUENCY_PHASE_S": "Phase S Frequency",
+    "DSP_FREQUENCY_PHASE_T": "Phase T Frequency",
+    "DSP_VBULK_PLUS": "Positive Bulk Voltage",
+    "DSP_VBULK_MINUS": "Negative Bulk Voltage",
+    "DSP_SUPERVISOR_TEMPERATURE": "Supervisor Temperature",
+    "DSP_ALIM_TEMPERATURE": "Power Supply Temperature",
+    "DSP_HEAT_SINK_TEMPERATURE": "Heat Sink Temperature",
+    "DSP_TEMPERATURE_1": "Temperature 1",
+    "DSP_TEMPERATURE_2": "Temperature 2",
+    "DSP_TEMPERATURE_3": "Temperature 3",
+    "DSP_FAN_1_SPEED": "Fan 1 Speed",
+    "DSP_FAN_2_SPEED": "Fan 2 Speed",
+    "DSP_FAN_3_SPEED": "Fan 3 Speed",
+    "DSP_FAN_4_SPEED": "Fan 4 Speed",
+    "DSP_FAN_5_SPEED": "Fan 5 Speed",
+    "DSP_POWER_SATURATION_LIMIT": "Power Saturation Limit",
+    "DSP_RIFERIMENTO_ANELLO_BULK": "Bulk Ring Reference",
+    "DSP_VPANEL_MICRO": "Micro Panel Voltage",
+    "DSP_GRID_VOLTAGE_PHASE_R": "Phase R Grid Voltage",
+    "DSP_GRID_VOLTAGE_PHASE_S": "Phase S Grid Voltage",
+    "DSP_GRID_VOLTAGE_PHASE_T": "Phase T Grid Voltage",
 }
 
-# --- VOLLSTÄNDIGE BEFEHLSLISTE (INKL. ALLEN SENSOREN) ---
+# --- COMPLETE COMMAND LIST (INCLUDING ALL SENSORS) ---
 COMMANDS = {
     "DSP_GRID_POWER": b"\x30\x33\x0D",
     "DSP_DAILY_ENERGY": b"\x31\x33\x0D",
@@ -326,18 +311,18 @@ async def async_setup_entry(
     host = config_entry.data[CONF_HOST]
     port = config_entry.data[CONF_PORT]
     slave_id = config_entry.data[CONF_SLAVE_ID]
-    name = config_entry.data.get("name", f"Aurora WR {slave_id}")
+    name = config_entry.data.get("name", f"INV {slave_id}")
 
     coordinator = AuroraDataUpdateCoordinator(hass, host, port, slave_id)
 
-    # Erstelle alle Sensoren für diesen Wechselrichter
+    # Create all sensors for this inverter
     sensors = [
         AuroraSensor(
             coordinator=coordinator,
             sensor_type=st,
             unit=UNITS.get(st, ""),
             factor=FACTORS.get(st, 1),
-            name=f"WR {slave_id} {SENSOR_NAMES.get(st, st)}",
+            name=f"INV {slave_id} {SENSOR_NAMES.get(st, st)}",
             text_mapping=(
                 ALARM_MESSAGES if st == "DSP_ALARMS"
                 else STATUS_MESSAGES if st == "DSP_STATUS"
@@ -354,7 +339,7 @@ async def async_setup_entry(
     ]
 
     async_add_entities(sensors, True)
-    
+
 class AuroraDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching data from the Aurora inverter."""
 
@@ -363,8 +348,8 @@ class AuroraDataUpdateCoordinator(DataUpdateCoordinator):
         super().__init__(
             hass,
             _LOGGER,
-            name=f"Aurora WR {slave_id}",
-            update_interval=timedelta(seconds=60),  # Hier wird timedelta verwendet
+            name=f"INV {slave_id}",
+            update_interval=timedelta(seconds=60),
         )
         self._host = host
         self._port = port
@@ -416,7 +401,7 @@ class AuroraDataUpdateCoordinator(DataUpdateCoordinator):
                     elif sensor_type == "DSP_VERSION":
                         data[sensor_type] = client.version()
                     elif sensor_type == "DSP_MODEL":
-                        data[sensor_type] = None  # aurorapy hat keine model()-Methode
+                        data[sensor_type] = None  # aurorapy has no model() method
                     elif sensor_type == "DSP_EVENTS":
                         data[sensor_type] = client.measure(21)
                     elif sensor_type == "DSP_LAST_ERROR":
@@ -513,17 +498,16 @@ class AuroraDataUpdateCoordinator(DataUpdateCoordinator):
                         data[sensor_type] = client.measure(63)
                 except AuroraError as e:
                     data[sensor_type] = None
-                    _LOGGER.error("Fehler bei %s: %s", sensor_type, e)
+                    _LOGGER.error("Error with %s: %s", sensor_type, e)
                 except Exception as e:
                     data[sensor_type] = None
-                    _LOGGER.error("Allgemeiner Fehler bei %s: %s", sensor_type, e)
+                    _LOGGER.error("General error with %s: %s", sensor_type, e)
 
             client.close()
         except Exception as e:
-            raise UpdateFailed(f"Fehler bei der Kommunikation: {e}") from e
+            raise UpdateFailed(f"Communication error: {e}") from e
         return data
-        
-    
+
 class AuroraSensor(SensorEntity):
     """Representation of an Aurora Solar Inverter sensor."""
 
@@ -545,7 +529,7 @@ class AuroraSensor(SensorEntity):
         self._name = name
         self._text_mapping = text_mapping
         self._is_string = is_string
-        self._attr_unique_id = f"aurora_wr_{coordinator._slave_id}_{sensor_type.lower()}"
+        self._attr_unique_id = f"aurora_inv_{coordinator._slave_id}_{sensor_type.lower()}"
         self._attr_icon = ICON_MAPPING.get(sensor_type, "mdi:help")
 
     @property
@@ -596,9 +580,8 @@ class AuroraSensor(SensorEntity):
         """Request refresh."""
         await self._coordinator.async_request_refresh()
 
-
 def measure_with_retry(client, code, retries=2):
-    """Versucht, einen Wert mit Wiederholungen bei Timeout zu lesen."""
+    """Attempts to read a value with retries on timeout."""
     for attempt in range(retries + 1):
         try:
             value = client.measure(code)
@@ -613,16 +596,15 @@ def measure_with_retry(client, code, retries=2):
     return None
 
 class AuroraSensorBase(SensorEntity):
-    """Basis-Klasse für alle ABB Aurora Sensoren."""
+    """Base class for all ABB Aurora sensors."""
 
     def __init__(self, host, port, slave_id, name, sensor_type, unit, factor=1, precision=2, is_string=False, text_mapping=None):
-        """Initialisiere den Sensor."""
+        """Initialize the sensor."""
         self._host = host
         self._port = port
         self._slave_id = slave_id
-        """self._name = f"{name} {sensor_type.split('_')[-1].title()}"""
-        self._attr_name = f"WR {slave_id} {SENSOR_NAMES.get(sensor_type, sensor_type)}"
-        self._attr_friendly_name = f"WR {slave_id} {SENSOR_NAMES.get(sensor_type, sensor_type)}"
+        self._attr_name = f"INV {slave_id} {SENSOR_NAMES.get(sensor_type, sensor_type)}"
+        self._attr_friendly_name = f"INV {slave_id} {SENSOR_NAMES.get(sensor_type, sensor_type)}"
         self._sensor_type = sensor_type
         self._unit = unit
         self._factor = factor
@@ -631,16 +613,16 @@ class AuroraSensorBase(SensorEntity):
         self._text_mapping = text_mapping
         self._state = None
         self._attr_native_unit_of_measurement = unit if not is_string else None
-        self._attr_unique_id = f"aurora_wr_{slave_id}_{sensor_type.lower()}"
+        self._attr_unique_id = f"aurora_inv_{slave_id}_{sensor_type.lower()}"
         self._attr_icon = ICON_MAPPING.get(sensor_type, "mdi:help")
 
     @property
     def state(self):
-        """Aktueller Zustand des Sensors."""
+        """Current state of the sensor."""
         return self._state
 
     def update(self):
-        """Aktualisiere die Sensordaten."""
+        """Update the sensor data."""
         try:
             client = AuroraTCPClient(ip=self._host, port=self._port, address=self._slave_id, timeout=20)
             client.connect()
@@ -696,7 +678,7 @@ class AuroraSensorBase(SensorEntity):
             elif self._sensor_type == "DSP_VERSION":
                 self._state = client.version()
             elif self._sensor_type == "DSP_MODEL":
-                self._state = None  # aurorapy hat keine model()-Methode
+                self._state = None  # aurorapy has no model() method
             elif self._sensor_type == "DSP_EVENTS":
                 events = measure_with_retry(client, 21)
                 self._state = events
@@ -705,13 +687,13 @@ class AuroraSensorBase(SensorEntity):
                 self._state = last_error
             elif self._sensor_type == "DSP_ALARMS":
                 alarms = measure_with_retry(client, 19)
-                self._state = self._text_mapping.get(int(alarms), "Unbekannt") if alarms is not None else "Unbekannt"
+                self._state = self._text_mapping.get(int(alarms), "Unknown") if alarms is not None else "Unknown"
             elif self._sensor_type == "DSP_FAULT_CODE":
                 fault = measure_with_retry(client, 20)
-                self._state = self._text_mapping.get(int(fault), "Unbekannt") if fault is not None else "Unbekannt"
+                self._state = self._text_mapping.get(int(fault), "Unknown") if fault is not None else "Unknown"
             elif self._sensor_type == "DSP_STATUS":
                 status = measure_with_retry(client, 23)
-                self._state = self._text_mapping.get(int(status), "Unbekannt") if status is not None else "Unbekannt"
+                self._state = self._text_mapping.get(int(status), "Unknown") if status is not None else "Unknown"
             elif self._sensor_type == "DSP_INPUT_2_VOLTAGE":
                 value = measure_with_retry(client, 26)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
@@ -842,21 +824,21 @@ class AuroraSensorBase(SensorEntity):
             client.close()
         except AuroraError as e:
             self._state = None
-            _LOGGER.error("Fehler bei %s: %s", self._name, e)
+            _LOGGER.error("Error with %s: %s", self._name, e)
         except Exception as e:
             self._state = None
-            _LOGGER.error("Allgemeiner Fehler bei %s: %s", self._name, e)
+            _LOGGER.error("General error with %s: %s", self._name, e)
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
-    """Richte ALLE ABB Aurora Sensoren ein."""
+    """Set up all ABB Aurora sensors."""
     host = config[CONF_HOST]
     port = config[CONF_PORT]
     slave_id = config.get(CONF_SLAVE_ID, 2)
-    name = config.get("name", f"Aurora WR {slave_id}")
+    name = config.get("name", f"INV {slave_id}")
 
-    # Erstelle alle Sensoren für diesen Wechselrichter
+    # Create all sensors for this inverter
     sensors = [
-        # Leistung und Energie
+        # Power and Energy
         AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_POWER", "W", factor=1, precision=2),
         AuroraSensorBase(host, port, slave_id, name, "DSP_DAILY_ENERGY", "Wh", precision=0),
         AuroraSensorBase(host, port, slave_id, name, "DSP_TOTAL_ENERGY", "kWh", factor=0.1, precision=2),
@@ -865,29 +847,29 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_FREQUENCY", "Hz", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_PF", "", factor=1, precision=2),
 
-        # Gleichstromkreis
+        # DC Circuit
         AuroraSensorBase(host, port, slave_id, name, "DSP_DC_VOLTAGE", "V", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_DC_CURRENT", "A", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_DC_POWER", "W", factor=1, precision=0),
 
-        # Temperatur und Umwelt
+        # Temperature and Environment
         AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE", "°C", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_RADIATOR_TEMP", "°C", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_AMBIENT_TEMP", "°C", factor=1, precision=1),
 
-        # Diagnose (wichtig!)
+        # Diagnostics (important!)
         AuroraSensorBase(host, port, slave_id, name, "DSP_ALARMS", "", text_mapping=ALARM_MESSAGES),
         AuroraSensorBase(host, port, slave_id, name, "DSP_FAULT_CODE", "", text_mapping=FAULT_MESSAGES),
         AuroraSensorBase(host, port, slave_id, name, "DSP_STATUS", "", text_mapping=STATUS_MESSAGES),
         AuroraSensorBase(host, port, slave_id, name, "DSP_EVENTS", ""),
         AuroraSensorBase(host, port, slave_id, name, "DSP_LAST_ERROR", ""),
 
-        # Seriennummern und Modell (als String)
+        # Serial numbers and model (as string)
         AuroraSensorBase(host, port, slave_id, name, "DSP_SERIAL_NUMBER", "", is_string=True),
         AuroraSensorBase(host, port, slave_id, name, "DSP_MODEL", "", is_string=True),
         AuroraSensorBase(host, port, slave_id, name, "DSP_VERSION", "", is_string=True),
 
-        # Erweiterte Diagnose
+        # Advanced Diagnostics
         AuroraSensorBase(host, port, slave_id, name, "DSP_ISOLATION", "kΩ", factor=1, precision=0),
         AuroraSensorBase(host, port, slave_id, name, "DSP_OPERATING_HOURS", "h", factor=1, precision=0),
 
@@ -898,7 +880,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         # Vbulk
         AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK", "V", factor=1, precision=1),
 
-        # Leckströme
+        # Leakage Currents
         AuroraSensorBase(host, port, slave_id, name, "DSP_ILEAK_DC_DC", "A", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_ILEAK_INVERTER", "A", factor=1, precision=1),
 
@@ -911,29 +893,29 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_FREQUENCY_DC_DC", "Hz", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_DC_DC", "V", factor=1, precision=1),
 
-        # Durchschnittliche Netzspannung
+        # Average Grid Voltage
         AuroraSensorBase(host, port, slave_id, name, "DSP_AVERAGE_GRID_VOLTAGE", "V", factor=1, precision=1),
 
         # Vbulk Mid
         AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_MID", "V", factor=1, precision=1),
 
-        # Leistungsspitzen
+        # Power Peaks
         AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_PEAK", "W", factor=1, precision=0),
         AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_PEAK_TODAY", "W", factor=1, precision=0),
 
-        # Neutralleiter
+        # Neutral
         AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_NEUTRAL", "V", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_NEUTRAL_PHASE", "V", factor=1, precision=1),
 
-        # Windgenerator
+        # Wind Generator
         AuroraSensorBase(host, port, slave_id, name, "DSP_WIND_GENERATOR_FREQUENCY", "Hz", factor=1, precision=1),
 
-        # Phasenströme
+        # Phase Currents
         AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_R", "A", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_S", "A", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_T", "A", factor=1, precision=1),
 
-        # Phasenfrequenzen
+        # Phase Frequencies
         AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_R", "Hz", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_S", "Hz", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_T", "Hz", factor=1, precision=1),
@@ -942,7 +924,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_PLUS", "V", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_MINUS", "V", factor=1, precision=1),
 
-        # Temperaturen
+        # Temperatures
         AuroraSensorBase(host, port, slave_id, name, "DSP_SUPERVISOR_TEMPERATURE", "°C", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_ALIM_TEMPERATURE", "°C", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_HEAT_SINK_TEMPERATURE", "°C", factor=1, precision=1),
@@ -950,23 +932,23 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE_2", "°C", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE_3", "°C", factor=1, precision=1),
 
-        # Lüftergeschwindigkeiten
+        # Fan Speeds
         AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_1_SPEED", "rpm", factor=1, precision=0),
         AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_2_SPEED", "rpm", factor=1, precision=0),
         AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_3_SPEED", "rpm", factor=1, precision=0),
         AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_4_SPEED", "rpm", factor=1, precision=0),
         AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_5_SPEED", "rpm", factor=1, precision=0),
 
-        # Leistungssättigungsgrenze
+        # Power Saturation Limit
         AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_SATURATION_LIMIT", "W", factor=1, precision=0),
 
-        # Riferimento Anello Bulk
+        # Bulk Ring Reference
         AuroraSensorBase(host, port, slave_id, name, "DSP_RIFERIMENTO_ANELLO_BULK", "", factor=1, precision=1),
 
-        # Vpanel Micro
+        # Micro Panel Voltage
         AuroraSensorBase(host, port, slave_id, name, "DSP_VPANEL_MICRO", "V", factor=1, precision=1),
 
-        # Phasenspannungen
+        # Phase Voltages
         AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_R", "V", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_S", "V", factor=1, precision=1),
         AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_T", "V", factor=1, precision=1),
