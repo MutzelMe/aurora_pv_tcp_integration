@@ -9,7 +9,7 @@ There is a python library (aurorapy) which is used by this integration to read I
 
 ## Installation
 ### Aurora/ABB/Firmer PVI-PMU
-The integration can be used to connect a PVI-PMU (for Power management regulation) to a Waveshare adapter.
+The integration can be used to connect a [PVI-PMU ](https://www.fimer.com/sites/default/files/PVI-PMU-APP%20NOTE%20DE-RevA.pdf)(for Power management regulation) to a Waveshare adapter.
 
 <img width="8%" height="8%" alt="grafik" src="https://github.com/user-attachments/assets/6ac4940f-07d2-41cf-a4cc-2a5163b88d7f" />
 
