@@ -5,6 +5,7 @@
 This Integration makes use of a [Waveshare rs485 to Ehternet](https://www.waveshare.com/rs485-to-eth-b.htm) device to convert RS485 signal to ehternet.
 My Aurora/ABB PowerOne Inverter is attached to a PMU PVI and does NOT use TCP Modbus but a proprietary aurora protocol.
 
+## Configuration 
 <img width="545" height="382" alt="grafik" src="https://github.com/user-attachments/assets/c7be00ae-4df7-4115-b179-a5d7a6d3891a" />
 
 There is a python library (aurorapy) which is used by this integration to read Inverter Data.
