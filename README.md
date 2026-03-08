@@ -4,12 +4,18 @@
 This Integration makes use of a RS485 to Ethernet converter, like this one (non PoE Version)
 [Waveshare rs485 to Ehternet](https://www.waveshare.com/rs485-to-eth-b.htm).
 In some cases, Aurora/ABB PowerOne inverters are attached to a PMU PVI and this PMU-PVI uses a proprietary aurora protocol.
+There is a python library (aurorapy) which is used by this integration to read Inverter Data.
+
 
 ## Installation
 ### Aurora/ABB/Firmer PVI-PMU
-I have use a PVI-PMU for Power management regulation. This connects to the Waveshare Adapter.
+The integration can be used to connect a PVI-PMU (for Power management regulation) to a Waveshare adapter.
+
+<img width="8%" height="8%" alt="grafik" src="https://github.com/user-attachments/assets/6ac4940f-07d2-41cf-a4cc-2a5163b88d7f" />
+
 
 ### Waveshare RS485 Adapter
+Wavesahre provides adapters to convert between RS485 and ethernet.
 There are different Versions of the Waveshare adapter, below you find an example.
 
 <img width="8%" height="8%" alt="Waveshare Adapter" src="https://github.com/user-attachments/assets/cfed2e8c-db85-452a-81ed-bc1653c7f612" />
@@ -17,6 +23,7 @@ There are different Versions of the Waveshare adapter, below you find an example
 In case you have a **Power over Ethernet** (PoE) capable Swtich, there is also a PoE version.
 
 There is a DIN Rail (Hutschiene) version and non Din Rail devices.
+In all cases, you need to connect Ethernet to your LAN which is accessible by HomeAssistant and also serial wiring (see below).
 
 ### Wiring
 
@@ -27,8 +34,6 @@ There is a DIN Rail (Hutschiene) version and non Din Rail devices.
 |G2|GND|
 
 <img width="50%" height="50%"  alt="grafik" src="https://github.com/user-attachments/assets/765f635d-4a2a-4b80-be2b-2f854adaa2e4" />
-
-### Waveshare Configuration
 
 ## Configuration 
 ### Waveshare Configuration
@@ -70,28 +75,3 @@ Like so:
    If you don't know the slave ID of your inverter, you can find it in the settings menu of the inverter (consult the inverter manual)
 <img width="50%" height="50%" alt="Homeassistant Configuration Menu" src="https://github.com/user-attachments/assets/c7be00ae-4df7-4115-b179-a5d7a6d3891a" />
 
-There is a python library (aurorapy) which is used by this integration to read Inverter Data.
-
------------
-
-
-
-Aurora Inverter -> Homeassistant Script for TCP to RS485 Adapters
-
-Add to ```configuration.yaml```
-``` yaml
-sensor:
-  - platform: aurora_solar
-    host: 192.168.250.245  # IP deines Waveshare-Adapters
-    port: 5000   # anpassen
-    slave_id: 2  # Slave-ID deines Wechselrichters
-    name: "Aurora Wechselrichter 1"
-    scan_interval: 60  # Aktualisiere alle 60 Sekunden statt 30
-    
-  - platform: aurora_solar
-    host: 192.168.250.245  # IP deines Waveshare-Adapters
-    port: 5000   # anpassen
-    slave_id: 3  # Slave-ID deines Wechselrichters
-    name: "Aurora Wechselrichter 2"
-    scan_interval: 60  # Aktualisiere alle 60 Sekunden statt 30
-```
