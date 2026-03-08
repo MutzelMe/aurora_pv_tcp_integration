@@ -285,7 +285,7 @@ COMMANDS = {
     "DSP_STATUS": b"\x51\x33\x0D",
     "DSP_EVENTS": b"\x52\x33\x0D",
     "DSP_FAULT_CODE": b"\x53\x33\x0D",
-    "DSP_MODEL": b"\x55\x33\x0D",
+    "DSP_MODEL": b"\x55\x33\x0D",    # used via client.pn()
     "DSP_SERIAL": b"\x56\x33\x0D",
     "DSP_FW_VERSION": b"\x57\x33\x0D",
     "DSP_DSP_VERSION": b"\x58\x33\x0D",
@@ -363,9 +363,13 @@ class AuroraDataUpdateCoordinator(DataUpdateCoordinator):
             client.connect()
 
             for sensor_type, command in COMMANDS.items():
-                try:
+                try:                   
                     if sensor_type == "DSP_GRID_POWER":
                         data[sensor_type] = client.measure(3)
+                    
+                    elif self._sensor_type == "DSP_MODEL":
+                        self._state = client.pn()  # Modellbezeichnung abfragen
+                                        
                     elif sensor_type == "DSP_DAILY_ENERGY":
                         data[sensor_type] = client.cumulated_energy(0)
                     elif sensor_type == "DSP_TOTAL_ENERGY":
@@ -400,8 +404,6 @@ class AuroraDataUpdateCoordinator(DataUpdateCoordinator):
                         data[sensor_type] = client.serial_number()
                     elif sensor_type == "DSP_VERSION":
                         data[sensor_type] = client.version()
-                    elif sensor_type == "DSP_MODEL":
-                        data[sensor_type] = None  # aurorapy has no model() method
                     elif sensor_type == "DSP_EVENTS":
                         data[sensor_type] = client.measure(21)
                     elif sensor_type == "DSP_LAST_ERROR":
@@ -678,7 +680,7 @@ class AuroraSensorBase(SensorEntity):
             elif self._sensor_type == "DSP_VERSION":
                 self._state = client.version()
             elif self._sensor_type == "DSP_MODEL":
-                self._state = None  # aurorapy has no model() method
+                self._state = client.pn() 
             elif self._sensor_type == "DSP_EVENTS":
                 events = measure_with_retry(client, 21)
                 self._state = events
