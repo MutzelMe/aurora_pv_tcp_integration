@@ -327,7 +327,7 @@ COMMANDS = {
     "DSP_DCDC_CH1_STATE": None,
     "DSP_DCDC_CH2_STATE": None,
     "DSP_ALARM_STATE": None,
-    "DSP_SERIAL_NUMBER": NONE,
+    "DSP_SERIAL_NUMBER": None,
 }
 
 async def async_setup_entry(
