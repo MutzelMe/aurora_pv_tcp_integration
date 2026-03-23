@@ -1,0 +1,18 @@
+# Ignore aurorapy documentation files
+# (But keep important .md files like CHANGELOG.md and README.md)
+# documentation/*.md
+
+# Ignore local test files
+# (But keep hacs.json)
+# *.json
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore VS Code settings
+.vscode/
+
+# Ignore environment files
+.env
+venv/

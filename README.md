@@ -6,6 +6,11 @@ This Integration makes use of a RS485 to Ethernet converter, like this one (non 
 In some cases, Aurora/ABB PowerOne inverters are attached to a PMU PVI and this PMU-PVI uses a proprietary aurora protocol.
 There is a python library (aurorapy) which is used by this integration to read Inverter Data.
 
+# Alternative Projects
+
+If you are looking for alternative ways to monitor your Aurora inverter, you might want to check out the following projects:
+
+- [esphome-aurora-inverter](https://github.com/michelsciortino/esphome-aurora-inverter): This project provides an ESPHome integration for ABB Aurora inverters using an ESP8266/ESP32 board. It uses the [ABBAurora](https://github.com/jrbenito/ABBAurora) library to handle the Aurora communication protocol.
 
 ## Installation
 ### Aurora/ABB/Firmer PVI-PMU
