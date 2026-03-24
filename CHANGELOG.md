@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced unique_id generation to remove redundant "dsp_" prefixes
 - Updated config flow to use user-provided names for better entity organization
 
-## [0.2.2] - 2025-04-01
+## [0.2.2]
 
 ### Added
 - Initial HACS integration support
@@ -42,13 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Various bug fixes and stability improvements
 
-## [0.1.0] - 2025-03-01
+## [0.1.0]
 
 ### Added
 - Initial project setup
 - Basic Aurora TCP communication
 - Core sensor functionality
 
-[Unreleased]: https://github.com/MutzelMe/aurora_pv_tcp_integration/compare/v0.2.2...HEAD
-[0.2.2]: https://github.com/MutzelMe/aurora_pv_tcp_integration/releases/tag/v0.2.2
-[0.1.0]: https://github.com/MutzelMe/aurora_pv_tcp_integration/releases/tag/v0.1.0
