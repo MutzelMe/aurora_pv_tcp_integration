@@ -5,7 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.5.1] - 2024-03-24
+
+### Fixed
+- Fixed options flow 500 Internal Server Error by adding proper error handling
+- Fixed integration icon display by implementing official Home Assistant icon structure
+- Fixed icon format: 64x64 PNG in images/ directory with proper manifest.json "icons" object
+- Stabilized unique_id generation for better entity compatibility
+- Added missing icons for all sensor types (temperature, frequency, diagnostics, etc.)
+
+## [0.5.0] - 2024-03-24
 
 ### Added
 - Added comprehensive icon support for all sensor types using Material Design Icons
@@ -17,12 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved entity naming to be cleaner and more concise (e.g., "Inverter 1 Grid Power" instead of "aurora solar aurora 3 dsp grid power")
 - Enhanced unique_id generation to remove redundant "dsp_" prefixes
 - Updated config flow to use user-provided names for better entity organization
-- Bumped version to 0.5.0 (MINOR update for icon support and naming improvements)
-
-### Fixed
-- Added missing icons for temperature, frequency, power factor, and diagnostic sensors
-- Ensured all sensor types have appropriate icons assigned
-- Maintained backward compatibility with legacy setup_platform method
 
 ## [0.2.2] - 2025-04-01
 
