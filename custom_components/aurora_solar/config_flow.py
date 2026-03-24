@@ -25,15 +25,32 @@ DATA_SCHEMA = vol.Schema(
 class CannotConnect(HomeAssistantError):
     """Error to indicate we cannot connect to the inverter."""
 
+class InvalidHost(HomeAssistantError):
+    """Error for invalid host address."""
+
+class InvalidPort(HomeAssistantError):
+    """Error for invalid port."""
+
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
-    """Prüfe, ob die Verbindung zum Wechselrichter möglich ist."""
+    """Validate connection to the inverter."""
+    from aurorapy.client import AuroraTCPClient, AuroraError
     try:
-        # Hier deine Verbindungstest-Logik einfügen
-        pass
-    except Exception as e:
-        _LOGGER.exception("Fehler bei der Verbindung zum Wechselrichter: %s", e)
+        # Test actual connection to the inverter
+        client = AuroraTCPClient(
+            ip=data[CONF_HOST],
+            port=data[CONF_PORT],
+            address=data[CONF_SLAVE_ID],
+            timeout=10
+        )
+        client.connect()
+        client.close()
+        return {"title": f"Inverter {data[CONF_SLAVE_ID]}"}
+    except AuroraError as e:
+        _LOGGER.exception("Connection error: %s", e)
         raise CannotConnect from e
-    return {"title": f"Wechselrichter {data[CONF_SLAVE_ID]}"}
+    except Exception as e:
+        _LOGGER.exception("Unexpected connection error: %s", e)
+        raise CannotConnect from e
 
 class AuroraSolarConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for ABB Aurora Solar Inverter."""
@@ -44,7 +61,7 @@ class AuroraSolarConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Handle the initial step (GUI-Formular anzeigen)."""
+        """Handle the initial step (show GUI form)."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -70,7 +87,7 @@ class AuroraSolarConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
     ) -> config_entries.OptionsFlow:
-        """Optionen für bestehende Einträge (z. B. Slave-ID ändern)."""
+        """Get options flow for existing entries (e.g. change Slave ID)."""
         return AuroraSolarOptionsFlow(config_entry)
 
 class AuroraSolarOptionsFlow(config_entries.OptionsFlow):
@@ -83,8 +100,9 @@ class AuroraSolarOptionsFlow(config_entries.OptionsFlow):
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Manage the options (z. B. Slave-ID ändern)."""
+        """Manage the options (e.g. change Slave ID)."""
         if user_input is not None:
+            # Update the options with new slave ID
             return self.async_create_entry(title="", data=user_input)
 
         return self.async_show_form(
