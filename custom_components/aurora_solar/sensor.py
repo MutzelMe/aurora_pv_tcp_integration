@@ -74,8 +74,9 @@ class AuroraSensorBase(SensorEntity):
         self._text_mapping = text_mapping
         self._state = None
         self._attr_native_unit_of_measurement = unit if not is_string else None
-        # Create a cleaner unique_id without redundant "dsp" prefix
-        sensor_key = sensor_type.replace("DSP_", "").lower()
+        # Create unique_id - keep original format for backward compatibility
+        # but ensure it's lowercase and consistent
+        sensor_key = sensor_type.lower().replace("dsp_", "")
         self._attr_unique_id = f"aurora_{slave_id}_{sensor_key}"
         self._attr_icon = self._get_icon_for_sensor_type(sensor_type)
 

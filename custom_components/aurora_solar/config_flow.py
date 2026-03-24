@@ -108,9 +108,16 @@ class AuroraSolarOptionsFlow(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Manage the options (e.g. change Slave ID)."""
+        errors: dict[str, str] = {}
+        
         if user_input is not None:
-            # Create a new entry with updated options
-            return self.async_create_entry(title=self.config_entry.title, data=user_input)
+            # Validate the input
+            try:
+                # Return the updated options
+                return self.async_create_entry(title=self.config_entry.title, data=user_input)
+            except Exception as e:
+                _LOGGER.error("Error updating options: %s", e)
+                errors["base"] = "unknown"
 
         # Get current slave ID from options or data
         current_slave_id = (
@@ -128,4 +135,5 @@ class AuroraSolarOptionsFlow(config_entries.OptionsFlow):
                     ): int,
                 }
             ),
+            errors=errors,
         )
