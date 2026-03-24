@@ -1,0 +1,16 @@
+{
+  "title": "ABB Aurora Solar Inverter",
+  "description": "Integration for ABB Aurora solar inverters via TCP",
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "slave_id": "Slave ID",
+          "name": "Name (short, e.g., 'Inverter 1')"
+        }
+      }
+    }
+  }
+}

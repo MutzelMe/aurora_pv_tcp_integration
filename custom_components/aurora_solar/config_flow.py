@@ -19,8 +19,12 @@ DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_HOST): str,
         vol.Required(CONF_PORT, default=5000): int,
         vol.Required(CONF_SLAVE_ID, default=2): int,
+        vol.Required("name", default="Inverter"): str,
     }
 )
+
+# Translation strings for config flow
+CONFIG_FLOW_DESCRIPTION = "Please enter the connection details for your ABB Aurora inverter. Use a short name (e.g., 'Inverter 1') for better entity names."
 
 class CannotConnect(HomeAssistantError):
     """Error to indicate we cannot connect to the inverter."""
@@ -44,7 +48,9 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         )
         client.connect()
         client.close()
-        return {"title": f"Inverter {data[CONF_SLAVE_ID]}"}
+        # Use the provided name for the title
+        name = data.get("name", f"Inverter {data[CONF_SLAVE_ID]}")
+        return {"title": name}
     except AuroraError as e:
         _LOGGER.exception("Connection error: %s", e)
         raise CannotConnect from e
@@ -80,6 +86,7 @@ class AuroraSolarConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=DATA_SCHEMA,
             errors=errors,
+            description_placeholders={"suggestion": "e.g., Inverter 1"},
         )
 
     @staticmethod

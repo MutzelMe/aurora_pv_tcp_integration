@@ -8,35 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Added weekly energy sensor (DSP_WEEKLY_ENERGY) using cumulated_energy(1)
-- Added monthly energy sensor (DSP_MONTHLY_ENERGY) using cumulated_energy(3)
-- Added yearly energy sensor (DSP_YEARLY_ENERGY) using cumulated_energy(4)
-- Implemented sequential processing for multiple inverters to prevent conflicts
-- Increased timeout to 45 seconds for slow inverters
-- Added INVERTERS list configuration for multiple inverter support
-- Enhanced config flow with actual connection validation using AuroraTCPClient
-- Added specific error classes (InvalidHost, InvalidPort) for better error handling
-- Translated all config flow comments to English
+- Added comprehensive icon support for all sensor types using Material Design Icons
+- Added config flow field for custom inverter naming with guidance for short names
+- Added English translations for config flow interface
+- Implemented modern async_setup_entry for sensor platform
 
 ### Changed
-- Translated all German comments and documentation to English
-- Updated DSP_TOTAL_ENERGY to use correct cumulated_energy(5) parameter
-- Improved error handling and logging in config flow
-- Cleaned up duplicate code in __init__.py
-- Removed unnecessary backup files and test scripts
-- Bumped version to 0.4.0 (MINOR update for new config flow features)
+- Improved entity naming to be cleaner and more concise (e.g., "Inverter 1 Grid Power" instead of "aurora solar aurora 3 dsp grid power")
+- Enhanced unique_id generation to remove redundant "dsp_" prefixes
+- Updated config flow to use user-provided names for better entity organization
+- Bumped version to 0.5.0 (MINOR update for icon support and naming improvements)
 
 ### Fixed
-- Fixed merge conflict markers in direct_sensor_test.py
-- Removed commented-out duplicate code sections
-- Cleaned up Python cache files
-- Fixed 'Invalid handler specified' error by ensuring proper domain registration
-- Added proper timeout handling for connection tests
-
-### Removed
-- Removed alarm_event_status_mapping.md (unnecessary documentation)
-- Removed redundant test scripts (local_test.py, test_wrapper.py, local_sensor_check.py)
-- Removed all backup files and Python cache directories
+- Added missing icons for temperature, frequency, power factor, and diagnostic sensors
+- Ensured all sensor types have appropriate icons assigned
+- Maintained backward compatibility with legacy setup_platform method
 
 ## [0.2.2] - 2025-04-01
 
