@@ -14,18 +14,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implemented sequential processing for multiple inverters to prevent conflicts
 - Increased timeout to 45 seconds for slow inverters
 - Added INVERTERS list configuration for multiple inverter support
+- Enhanced config flow with actual connection validation using AuroraTCPClient
+- Added specific error classes (InvalidHost, InvalidPort) for better error handling
+- Translated all config flow comments to English
 
 ### Changed
 - Translated all German comments and documentation to English
 - Updated DSP_TOTAL_ENERGY to use correct cumulated_energy(5) parameter
-- Improved error handling and logging
+- Improved error handling and logging in config flow
 - Cleaned up duplicate code in __init__.py
 - Removed unnecessary backup files and test scripts
+- Bumped version to 0.4.0 (MINOR update for new config flow features)
 
 ### Fixed
 - Fixed merge conflict markers in direct_sensor_test.py
 - Removed commented-out duplicate code sections
 - Cleaned up Python cache files
+- Fixed 'Invalid handler specified' error by ensuring proper domain registration
+- Added proper timeout handling for connection tests
 
 ### Removed
 - Removed alarm_event_status_mapping.md (unnecessary documentation)
