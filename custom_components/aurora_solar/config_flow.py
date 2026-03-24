@@ -102,8 +102,14 @@ class AuroraSolarOptionsFlow(config_entries.OptionsFlow):
     ) -> FlowResult:
         """Manage the options (e.g. change Slave ID)."""
         if user_input is not None:
-            # Update the options with new slave ID
+            # Create a new entry with updated options
             return self.async_create_entry(title="", data=user_input)
+
+        # Get current slave ID from options or data
+        current_slave_id = (
+            self.config_entry.options.get(CONF_SLAVE_ID)
+            or self.config_entry.data.get(CONF_SLAVE_ID, 2)
+        )
 
         return self.async_show_form(
             step_id="init",
@@ -111,7 +117,7 @@ class AuroraSolarOptionsFlow(config_entries.OptionsFlow):
                 {
                     vol.Required(
                         CONF_SLAVE_ID,
-                        default=self.config_entry.options.get(CONF_SLAVE_ID, 2),
+                        default=current_slave_id,
                     ): int,
                 }
             ),
