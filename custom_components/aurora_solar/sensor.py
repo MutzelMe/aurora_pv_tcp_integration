@@ -153,7 +153,7 @@ class AuroraSensorBase(SensorEntity):
             elif self._sensor_type == "DSP_YEARLY_ENERGY":
                 self._state = round(client.cumulated_energy(4), self._precision)
             elif self._sensor_type == "DSP_TOTAL_ENERGY":
-                self._state = round(client.cumulated_energy(5) * 0.1, self._precision)
+                self._state = round(client.cumulated_energy(5), self._precision)
             elif self._sensor_type == "DSP_GRID_VOLTAGE":
                 value = measure_with_retry(client, 1)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
