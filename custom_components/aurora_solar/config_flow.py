@@ -44,7 +44,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
             ip=data[CONF_HOST],
             port=data[CONF_PORT],
             address=data[CONF_SLAVE_ID],
-            timeout=10
+            timeout=120
         )
         client.connect()
         client.close()

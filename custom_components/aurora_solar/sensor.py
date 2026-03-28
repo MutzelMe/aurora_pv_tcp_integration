@@ -43,7 +43,7 @@ def measure_with_retry(client, code, retries=2):
             return value
         except AuroraError as e:
             if "Reading Timeout" in str(e) and attempt < retries:
-                time.sleep(1)
+                time.sleep(0.3)
                 continue
             return None
     return None
