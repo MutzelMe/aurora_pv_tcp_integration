@@ -256,7 +256,6 @@ class AuroraSensorBase(SensorEntity):
             # Use connection pool instead of creating new client each time
             pool = AuroraConnectionPool(self._host, self._port, self._slave_id)
             client = await pool.get_connection()
-=======
 
             if self._sensor_type == "DSP_GRID_POWER":
                 value = measure_with_retry(client, 3)
