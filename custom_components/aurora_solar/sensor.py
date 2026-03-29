@@ -5,7 +5,7 @@ import logging
 from aurorapy.client import AuroraTCPClient, AuroraError
 import time
 
-from .const import DOMAIN, CONF_SLAVE_ID
+from .const import DOMAIN, CONF_SLAVE_ID, CONF_SCAN_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,11 +51,12 @@ def measure_with_retry(client, code, retries=2):
 class AuroraSensorBase(SensorEntity):
     """Base class for all ABB Aurora sensors."""
 
-    def __init__(self, host, port, slave_id, name, sensor_type, unit, factor=1, precision=2, is_string=False, text_mapping=None):
+    def __init__(self, host, port, slave_id, name, sensor_type, unit, factor=1, precision=2, is_string=False, text_mapping=None, scan_interval=60):
         """Initialize the sensor."""
         self._host = host
         self._port = port
         self._slave_id = slave_id
+        self._scan_interval = scan_interval
         """self._name = f"{name} {sensor_type.split('_')[-1].title()}"""
         # Use the provided name (short name from config flow) + clean sensor type name
         # Extract the meaningful part of the sensor type and clean it up
@@ -134,6 +135,11 @@ class AuroraSensorBase(SensorEntity):
     def state(self):
         """Current state of the sensor."""
         return self._state
+
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        return {"scan_interval": self._scan_interval}
 
     def update(self):
         """Update the sensor data."""
@@ -355,259 +361,263 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     port = config[CONF_PORT]
     slave_id = config.get(CONF_SLAVE_ID, 2)
     name = config.get("name", f"Aurora WR {slave_id}")
+    # Default scan interval for legacy setup
+    scan_interval = 60
 
     # Create all sensors for this inverter
     sensors = [
         # Power and Energy
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_POWER", "W", factor=1, precision=2),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_DAILY_ENERGY", "Wh", precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_WEEKLY_ENERGY", "Wh", precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_MONTHLY_ENERGY", "Wh", precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_YEARLY_ENERGY", "Wh", precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_TOTAL_ENERGY", "kWh", factor=0.1, precision=2),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE", "V", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT", "A", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_FREQUENCY", "Hz", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_PF", "", factor=1, precision=2),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_POWER", "W", factor=1, precision=2, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DAILY_ENERGY", "Wh", precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_WEEKLY_ENERGY", "Wh", precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_MONTHLY_ENERGY", "Wh", precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_YEARLY_ENERGY", "Wh", precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TOTAL_ENERGY", "kWh", factor=0.1, precision=2, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE", "V", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT", "A", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_FREQUENCY", "Hz", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_PF", "", factor=1, precision=2, scan_interval=scan_interval),
 
         # DC Circuit
-        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_VOLTAGE", "V", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_CURRENT", "A", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_POWER", "W", factor=1, precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_VOLTAGE", "V", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_CURRENT", "A", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_POWER", "W", factor=1, precision=0, scan_interval=scan_interval),
 
         # Temperature and Environment
-        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE", "°C", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_RADIATOR_TEMP", "°C", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_AMBIENT_TEMP", "°C", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE", "°C", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_RADIATOR_TEMP", "°C", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_AMBIENT_TEMP", "°C", factor=1, precision=1, scan_interval=scan_interval),
 
         # Diagnostics (important!)
-        AuroraSensorBase(host, port, slave_id, name, "DSP_ALARMS", "", text_mapping=ALARM_MESSAGES),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FAULT_CODE", "", text_mapping=FAULT_MESSAGES),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_STATUS", "", text_mapping=STATUS_MESSAGES),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_EVENTS", ""),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_LAST_ERROR", ""),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_ALARMS", "", text_mapping=ALARM_MESSAGES, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAULT_CODE", "", text_mapping=FAULT_MESSAGES, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_STATUS", "", text_mapping=STATUS_MESSAGES, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_EVENTS", "", scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_LAST_ERROR", "", scan_interval=scan_interval),
 
         # Serial Numbers and Model (as String)
-        AuroraSensorBase(host, port, slave_id, name, "DSP_SERIAL_NUMBER", "", is_string=True),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_MODEL", "", is_string=True),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_VERSION", "", is_string=True),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_SERIAL_NUMBER", "", is_string=True, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_MODEL", "", is_string=True, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VERSION", "", is_string=True, scan_interval=scan_interval),
 
         # Advanced Diagnostics
-        AuroraSensorBase(host, port, slave_id, name, "DSP_ISOLATION", "kΩ", factor=1, precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_OPERATING_HOURS", "h", factor=1, precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_ISOLATION", "kΩ", factor=1, precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_OPERATING_HOURS", "h", factor=1, precision=0, scan_interval=scan_interval),
 
         # Input 2
-        AuroraSensorBase(host, port, slave_id, name, "DSP_INPUT_2_VOLTAGE", "V", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_INPUT_2_CURRENT", "A", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_INPUT_2_VOLTAGE", "V", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_INPUT_2_CURRENT", "A", factor=1, precision=1, scan_interval=scan_interval),
 
         # Vbulk
-        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK", "V", factor=1, precision=1, scan_interval=scan_interval),
 
         # Leakage Currents
-        AuroraSensorBase(host, port, slave_id, name, "DSP_ILEAK_DC_DC", "A", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_ILEAK_INVERTER", "A", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_ILEAK_DC_DC", "A", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_ILEAK_INVERTER", "A", factor=1, precision=1, scan_interval=scan_interval),
 
         # Pins
-        AuroraSensorBase(host, port, slave_id, name, "DSP_PIN1", "W", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_PIN2", "W", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_PIN1", "W", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_PIN2", "W", factor=1, precision=1, scan_interval=scan_interval),
 
         # DC/DC
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_DC_DC", "V", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_FREQUENCY_DC_DC", "Hz", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_DC_DC", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_DC_DC", "V", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_FREQUENCY_DC_DC", "Hz", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_DC_DC", "V", factor=1, precision=1, scan_interval=scan_interval),
 
         # Average Grid Voltage
-        AuroraSensorBase(host, port, slave_id, name, "DSP_AVERAGE_GRID_VOLTAGE", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_AVERAGE_GRID_VOLTAGE", "V", factor=1, precision=1, scan_interval=scan_interval),
 
         # Vbulk Mid
-        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_MID", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_MID", "V", factor=1, precision=1, scan_interval=scan_interval),
 
         # Power Peaks
-        AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_PEAK", "W", factor=1, precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_PEAK_TODAY", "W", factor=1, precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_PEAK", "W", factor=1, precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_PEAK_TODAY", "W", factor=1, precision=0, scan_interval=scan_interval),
 
         # Neutral Conductor
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_NEUTRAL", "V", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_NEUTRAL_PHASE", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_NEUTRAL", "V", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_NEUTRAL_PHASE", "V", factor=1, precision=1, scan_interval=scan_interval),
 
         # Wind Generator
-        AuroraSensorBase(host, port, slave_id, name, "DSP_WIND_GENERATOR_FREQUENCY", "Hz", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_WIND_GENERATOR_FREQUENCY", "Hz", factor=1, precision=1, scan_interval=scan_interval),
 
         # Phase Currents
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_R", "A", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_S", "A", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_T", "A", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_R", "A", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_S", "A", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_T", "A", factor=1, precision=1, scan_interval=scan_interval),
 
         # Phase Frequencies
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_R", "Hz", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_S", "Hz", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_T", "Hz", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_R", "Hz", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_S", "Hz", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_T", "Hz", factor=1, precision=1, scan_interval=scan_interval),
 
         # Vbulk Plus/Minus
-        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_PLUS", "V", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_MINUS", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_PLUS", "V", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_MINUS", "V", factor=1, precision=1, scan_interval=scan_interval),
 
         # Temperaturen
-        AuroraSensorBase(host, port, slave_id, name, "DSP_SUPERVISOR_TEMPERATURE", "°C", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_ALIM_TEMPERATURE", "°C", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_HEAT_SINK_TEMPERATURE", "°C", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE_1", "°C", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE_2", "°C", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE_3", "°C", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_SUPERVISOR_TEMPERATURE", "°C", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_ALIM_TEMPERATURE", "°C", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_HEAT_SINK_TEMPERATURE", "°C", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE_1", "°C", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE_2", "°C", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE_3", "°C", factor=1, precision=1, scan_interval=scan_interval),
 
         # Fan Speeds
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_1_SPEED", "rpm", factor=1, precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_2_SPEED", "rpm", factor=1, precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_3_SPEED", "rpm", factor=1, precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_4_SPEED", "rpm", factor=1, precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_5_SPEED", "rpm", factor=1, precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_1_SPEED", "rpm", factor=1, precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_2_SPEED", "rpm", factor=1, precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_3_SPEED", "rpm", factor=1, precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_4_SPEED", "rpm", factor=1, precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_5_SPEED", "rpm", factor=1, precision=0, scan_interval=scan_interval),
 
         # Power Saturation Limit
-        AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_SATURATION_LIMIT", "W", factor=1, precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_SATURATION_LIMIT", "W", factor=1, precision=0, scan_interval=scan_interval),
 
         # Bulk Ring Reference
-        AuroraSensorBase(host, port, slave_id, name, "DSP_RIFERIMENTO_ANELLO_BULK", "", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_RIFERIMENTO_ANELLO_BULK", "", factor=1, precision=1, scan_interval=scan_interval),
 
         # Micro Panel Voltage
-        AuroraSensorBase(host, port, slave_id, name, "DSP_VPANEL_MICRO", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VPANEL_MICRO", "V", factor=1, precision=1, scan_interval=scan_interval),
 
         # Phase Voltages
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_R", "V", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_S", "V", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_T", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_R", "V", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_S", "V", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_T", "V", factor=1, precision=1, scan_interval=scan_interval),
     ]
     add_entities(sensors, True)
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up ABB Aurora sensors from a config entry."""
     from homeassistant.const import CONF_HOST, CONF_PORT
-    from .const import CONF_SLAVE_ID
+    from .const import CONF_SLAVE_ID, CONF_SCAN_INTERVAL
     
     # Get configuration from the config entry
     host = config_entry.data[CONF_HOST]
     port = config_entry.data[CONF_PORT]
     slave_id = config_entry.data.get(CONF_SLAVE_ID, 2)
+    # Get scan interval from config entry data or options, default to 60 seconds
+    scan_interval = config_entry.options.get(CONF_SCAN_INTERVAL, config_entry.data.get(CONF_SCAN_INTERVAL, 60))
     # Use the entry title as the name (this is what the user provided in config flow)
     name = config_entry.title
 
     # Create all sensors for this inverter
     sensors = [
         # Power and Energy
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_POWER", "W", factor=1, precision=2),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_DAILY_ENERGY", "Wh", precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_WEEKLY_ENERGY", "Wh", precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_MONTHLY_ENERGY", "Wh", precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_YEARLY_ENERGY", "Wh", precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_TOTAL_ENERGY", "kWh", factor=0.1, precision=2),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE", "V", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT", "A", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_FREQUENCY", "Hz", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_PF", "", factor=1, precision=2),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_POWER", "W", factor=1, precision=2, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DAILY_ENERGY", "Wh", precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_WEEKLY_ENERGY", "Wh", precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_MONTHLY_ENERGY", "Wh", precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_YEARLY_ENERGY", "Wh", precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TOTAL_ENERGY", "kWh", factor=0.1, precision=2, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE", "V", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT", "A", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_FREQUENCY", "Hz", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_PF", "", factor=1, precision=2, scan_interval=scan_interval),
 
         # DC Circuit
-        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_VOLTAGE", "V", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_CURRENT", "A", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_POWER", "W", factor=1, precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_VOLTAGE", "V", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_CURRENT", "A", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_DC_POWER", "W", factor=1, precision=0, scan_interval=scan_interval),
 
         # Temperature and Environment
-        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE", "°C", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_RADIATOR_TEMP", "°C", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_AMBIENT_TEMP", "°C", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE", "°C", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_RADIATOR_TEMP", "°C", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_AMBIENT_TEMP", "°C", factor=1, precision=1, scan_interval=scan_interval),
 
         # Diagnostics (important!)
-        AuroraSensorBase(host, port, slave_id, name, "DSP_ALARMS", "", text_mapping=ALARM_MESSAGES),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FAULT_CODE", "", text_mapping=FAULT_MESSAGES),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_STATUS", "", text_mapping=STATUS_MESSAGES),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_EVENTS", ""),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_LAST_ERROR", ""),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_ALARMS", "", text_mapping=ALARM_MESSAGES, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAULT_CODE", "", text_mapping=FAULT_MESSAGES, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_STATUS", "", text_mapping=STATUS_MESSAGES, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_EVENTS", "", scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_LAST_ERROR", "", scan_interval=scan_interval),
 
         # Serial Numbers and Model (as String)
-        AuroraSensorBase(host, port, slave_id, name, "DSP_SERIAL_NUMBER", "", is_string=True),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_MODEL", "", is_string=True),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_VERSION", "", is_string=True),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_SERIAL_NUMBER", "", is_string=True, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_MODEL", "", is_string=True, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VERSION", "", is_string=True, scan_interval=scan_interval),
 
         # Advanced Diagnostics
-        AuroraSensorBase(host, port, slave_id, name, "DSP_ISOLATION", "kΩ", factor=1, precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_OPERATING_HOURS", "h", factor=1, precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_ISOLATION", "kΩ", factor=1, precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_OPERATING_HOURS", "h", factor=1, precision=0, scan_interval=scan_interval),
 
         # Input 2
-        AuroraSensorBase(host, port, slave_id, name, "DSP_INPUT_2_VOLTAGE", "V", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_INPUT_2_CURRENT", "A", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_INPUT_2_VOLTAGE", "V", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_INPUT_2_CURRENT", "A", factor=1, precision=1, scan_interval=scan_interval),
 
         # Vbulk
-        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK", "V", factor=1, precision=1, scan_interval=scan_interval),
 
         # Leakage Currents
-        AuroraSensorBase(host, port, slave_id, name, "DSP_ILEAK_DC_DC", "A", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_ILEAK_INVERTER", "A", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_ILEAK_DC_DC", "A", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_ILEAK_INVERTER", "A", factor=1, precision=1, scan_interval=scan_interval),
 
         # Pins
-        AuroraSensorBase(host, port, slave_id, name, "DSP_PIN1", "W", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_PIN2", "W", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_PIN1", "W", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_PIN2", "W", factor=1, precision=1, scan_interval=scan_interval),
 
         # DC/DC
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_DC_DC", "V", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_FREQUENCY_DC_DC", "Hz", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_DC_DC", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_DC_DC", "V", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_FREQUENCY_DC_DC", "Hz", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_DC_DC", "V", factor=1, precision=1, scan_interval=scan_interval),
 
         # Average Grid Voltage
-        AuroraSensorBase(host, port, slave_id, name, "DSP_AVERAGE_GRID_VOLTAGE", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_AVERAGE_GRID_VOLTAGE", "V", factor=1, precision=1, scan_interval=scan_interval),
 
         # Vbulk Mid
-        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_MID", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_MID", "V", factor=1, precision=1, scan_interval=scan_interval),
 
         # Power Peaks
-        AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_PEAK", "W", factor=1, precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_PEAK_TODAY", "W", factor=1, precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_PEAK", "W", factor=1, precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_PEAK_TODAY", "W", factor=1, precision=0, scan_interval=scan_interval),
 
         # Neutral Conductor
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_NEUTRAL", "V", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_NEUTRAL_PHASE", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_NEUTRAL", "V", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_NEUTRAL_PHASE", "V", factor=1, precision=1, scan_interval=scan_interval),
 
         # Wind Generator
-        AuroraSensorBase(host, port, slave_id, name, "DSP_WIND_GENERATOR_FREQUENCY", "Hz", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_WIND_GENERATOR_FREQUENCY", "Hz", factor=1, precision=1, scan_interval=scan_interval),
 
         # Phase Currents
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_R", "A", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_S", "A", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_T", "A", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_R", "A", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_S", "A", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_CURRENT_PHASE_T", "A", factor=1, precision=1, scan_interval=scan_interval),
 
         # Phase Frequencies
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_R", "Hz", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_S", "Hz", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_T", "Hz", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_R", "Hz", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_S", "Hz", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FREQUENCY_PHASE_T", "Hz", factor=1, precision=1, scan_interval=scan_interval),
 
         # Vbulk Plus/Minus
-        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_PLUS", "V", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_MINUS", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_PLUS", "V", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VBULK_MINUS", "V", factor=1, precision=1, scan_interval=scan_interval),
 
         # Temperaturen
-        AuroraSensorBase(host, port, slave_id, name, "DSP_SUPERVISOR_TEMPERATURE", "°C", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_ALIM_TEMPERATURE", "°C", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_HEAT_SINK_TEMPERATURE", "°C", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE_1", "°C", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE_2", "°C", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE_3", "°C", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_SUPERVISOR_TEMPERATURE", "°C", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_ALIM_TEMPERATURE", "°C", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_HEAT_SINK_TEMPERATURE", "°C", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE_1", "°C", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE_2", "°C", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_TEMPERATURE_3", "°C", factor=1, precision=1, scan_interval=scan_interval),
 
         # Fan Speeds
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_1_SPEED", "rpm", factor=1, precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_2_SPEED", "rpm", factor=1, precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_3_SPEED", "rpm", factor=1, precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_4_SPEED", "rpm", factor=1, precision=0),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_5_SPEED", "rpm", factor=1, precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_1_SPEED", "rpm", factor=1, precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_2_SPEED", "rpm", factor=1, precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_3_SPEED", "rpm", factor=1, precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_4_SPEED", "rpm", factor=1, precision=0, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_FAN_5_SPEED", "rpm", factor=1, precision=0, scan_interval=scan_interval),
 
         # Power Saturation Limit
-        AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_SATURATION_LIMIT", "W", factor=1, precision=0),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_POWER_SATURATION_LIMIT", "W", factor=1, precision=0, scan_interval=scan_interval),
 
         # Bulk Ring Reference
-        AuroraSensorBase(host, port, slave_id, name, "DSP_RIFERIMENTO_ANELLO_BULK", "", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_RIFERIMENTO_ANELLO_BULK", "", factor=1, precision=1, scan_interval=scan_interval),
 
         # Micro Panel Voltage
-        AuroraSensorBase(host, port, slave_id, name, "DSP_VPANEL_MICRO", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_VPANEL_MICRO", "V", factor=1, precision=1, scan_interval=scan_interval),
 
         # Phase Voltages
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_R", "V", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_S", "V", factor=1, precision=1),
-        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_T", "V", factor=1, precision=1),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_R", "V", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_S", "V", factor=1, precision=1, scan_interval=scan_interval),
+        AuroraSensorBase(host, port, slave_id, name, "DSP_GRID_VOLTAGE_PHASE_T", "V", factor=1, precision=1, scan_interval=scan_interval),
     ]
     async_add_entities(sensors, True)

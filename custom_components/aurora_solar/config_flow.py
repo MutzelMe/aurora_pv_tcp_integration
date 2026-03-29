@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 
-from .const import DOMAIN, CONF_HOST, CONF_PORT, CONF_SLAVE_ID
+from .const import DOMAIN, CONF_HOST, CONF_PORT, CONF_SLAVE_ID, CONF_SCAN_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,6 +20,7 @@ DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_PORT, default=5000): int,
         vol.Required(CONF_SLAVE_ID, default=2): int,
         vol.Required("name", default="Inverter"): str,
+        vol.Required(CONF_SCAN_INTERVAL, default=60): int,
     }
 )
 
@@ -102,7 +103,8 @@ class AuroraSolarOptionsFlow(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
+        # Don't set self.config_entry manually - the parent class handles this
+        super().__init__(config_entry)
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -119,10 +121,14 @@ class AuroraSolarOptionsFlow(config_entries.OptionsFlow):
                 _LOGGER.error("Error updating options: %s", e)
                 errors["base"] = "unknown"
 
-        # Get current slave ID from options or data
+        # Get current values from options or data
         current_slave_id = (
             self.config_entry.options.get(CONF_SLAVE_ID)
             or self.config_entry.data.get(CONF_SLAVE_ID, 2)
+        )
+        current_scan_interval = (
+            self.config_entry.options.get(CONF_SCAN_INTERVAL)
+            or self.config_entry.data.get(CONF_SCAN_INTERVAL, 60)
         )
 
         return self.async_show_form(
@@ -132,6 +138,10 @@ class AuroraSolarOptionsFlow(config_entries.OptionsFlow):
                     vol.Required(
                         CONF_SLAVE_ID,
                         default=current_slave_id,
+                    ): int,
+                    vol.Required(
+                        CONF_SCAN_INTERVAL,
+                        default=current_scan_interval,
                     ): int,
                 }
             ),

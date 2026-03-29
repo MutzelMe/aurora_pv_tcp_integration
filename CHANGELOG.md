@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2024-03-29
+
+### Added
+- Added configurable scan interval to prevent "Updating aurora_solar sensor took longer than the scheduled update interval" warnings
+- Added scan interval configuration to config flow (default: 60 seconds)
+- Added scan interval to options flow for runtime configuration changes
+- Added scan interval as extra state attribute for visibility in sensor attributes
+
+### Fixed
+- Fixed options flow 500 Internal Server Error by removing manual config_entry assignment
+- Fixed AuroraSolarOptionsFlow initialization to properly use parent class
+
+### Changed
+- Updated all sensor entities to support configurable scan intervals
+- Improved backward compatibility for existing installations
+
 ## [0.5.1] - 2024-03-24
 
 ### Fixed
