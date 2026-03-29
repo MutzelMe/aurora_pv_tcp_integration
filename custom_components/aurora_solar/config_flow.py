@@ -96,16 +96,11 @@ class AuroraSolarConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         config_entry: config_entries.ConfigEntry,
     ) -> config_entries.OptionsFlow:
         """Get options flow for existing entries (e.g. change Slave ID)."""
-        return AuroraSolarOptionsFlow(config_entry)
+        return AuroraSolarOptionsFlow()
 
 class AuroraSolarOptionsFlow(config_entries.OptionsFlow):
     """Handle options flow for ABB Aurora Solar Inverter."""
-
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Initialize options flow."""
-        super().__init__()  # OptionsFlow does not take config_entry parameter
-        # Manually store config_entry since OptionsFlow doesn't set it automatically
-        self.config_entry = config_entry
+    # Modern OptionsFlow - config_entry is automatically available in async methods
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
