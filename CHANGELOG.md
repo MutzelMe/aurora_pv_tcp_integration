@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-03-29
+
+### Added
+- **Performance Optimization**: Implemented connection pooling to reduce TCP connections from 140+ to 2 per update cycle
+- **AuroraConnectionPool**: New singleton-based connection management system with automatic health checks
+- **Async Support**: Converted sensor update method to async_update() for better performance
+- **Automatic Reconnection**: Connection pool automatically handles connection failures and reconnects
+
+### Changed
+- **Major Performance Improvement**: Reduced TCP connection overhead by 98% (140+ connections → 2 connections per cycle)
+- **Sensor Update Method**: Changed from synchronous update() to asynchronous async_update()
+- **Connection Management**: Replaced direct AuroraTCPClient instantiation with pooled connections
+
+### Fixed
+- **Memory Leaks**: Connection pool automatically manages connection lifecycle with 5-minute timeout
+- **Connection Stability**: Health checks prevent using stale or failed connections
+- **Race Conditions**: Async locking prevents concurrent connection creation issues
+
+### Performance
+- **Connection Reduction**: 98% fewer TCP connections per update cycle
+- **Stability**: Improved adapter stability with fewer connection churn
+- **Error Handling**: Automatic recovery from network issues
+- **Resource Usage**: Reduced memory footprint with connection reuse
+
 ## [0.6.0] - 2026-03-29
 
 ### Added

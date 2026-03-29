@@ -1,4 +1,5 @@
 """Support for ABB Aurora Solar Inverters via Waveshare RS485-to-Ethernet adapter."""
+import asyncio
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import CONF_HOST, CONF_PORT
 import logging
@@ -32,6 +33,66 @@ FAULT_MESSAGES = {
     0x0001: "Short Circuit",
     0x0002: "Communication Error",
 }
+
+class AuroraConnectionPool:
+    """Connection pool for Aurora TCP clients to reduce connection overhead."""
+    
+    _instances = {}  # {(host, port, slave_id): AuroraConnectionPool}
+    
+    def __new__(cls, host, port, slave_id, timeout=20):
+        """Singleton pattern - one pool per inverter configuration."""
+        key = (host, port, slave_id)
+        if key not in cls._instances:
+            cls._instances[key] = super().__new__(cls)
+            cls._instances[key].__init__(host, port, slave_id, timeout)
+        return cls._instances[key]
+    
+    def __init__(self, host, port, slave_id, timeout=20):
+        """Initialize connection pool."""
+        self.host = host
+        self.port = port
+        self.slave_id = slave_id
+        self.timeout = timeout
+        self._connection = None
+        self._lock = asyncio.Lock()
+        self._last_used = 0
+    
+    async def get_connection(self):
+        """Get or create a connection with health check."""
+        now = time.time()
+        
+        # Check if existing connection is still valid
+        if self._connection and (now - self._last_used) < 300:  # 5 minute timeout
+            try:
+                # Simple health check - try to read a known register
+                test_value = self._connection.measure(1)  # Grid voltage
+                self._last_used = now
+                return self._connection
+            except Exception:
+                await self._close_connection()
+        
+        # Create new connection
+        async with self._lock:
+            if self._connection is None:
+                self._connection = AuroraTCPClient(
+                    ip=self.host,
+                    port=self.port,
+                    address=self.slave_id,
+                    timeout=self.timeout
+                )
+                self._connection.connect()
+                self._last_used = now
+        
+        return self._connection
+    
+    async def _close_connection(self):
+        """Close current connection safely."""
+        if self._connection:
+            try:
+                self._connection.close()
+            except:
+                pass
+            self._connection = None
 
 def measure_with_retry(client, code, retries=2):
     """Attempts to read a value with retries on timeout."""
@@ -141,11 +202,12 @@ class AuroraSensorBase(SensorEntity):
         """Return the state attributes."""
         return {"scan_interval": self._scan_interval}
 
-    def update(self):
-        """Update the sensor data."""
+    async def async_update(self):
+        """Update the sensor data using connection pooling."""
         try:
-            client = AuroraTCPClient(ip=self._host, port=self._port, address=self._slave_id, timeout=20)
-            client.connect()
+            # Use connection pool instead of creating new client each time
+            pool = AuroraConnectionPool(self._host, self._port, self._slave_id)
+            client = await pool.get_connection()
 
             if self._sensor_type == "DSP_GRID_POWER":
                 value = measure_with_retry(client, 3)
@@ -347,7 +409,8 @@ class AuroraSensorBase(SensorEntity):
                 value = measure_with_retry(client, 63)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
 
-            client.close()
+            # Note: We don't close the connection here since it's managed by the pool
+            # The pool will handle connection cleanup based on timeout and health checks
         except AuroraError as e:
             self._state = None
             _LOGGER.error("Fehler bei %s: %s", self._name, e)
