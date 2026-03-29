@@ -202,6 +202,20 @@ class AuroraSensorBase(SensorEntity):
         """Return the state attributes."""
         return {"scan_interval": self._scan_interval}
 
+    def update(self):
+        """Synchronous update method for backward compatibility."""
+        # Run async_update synchronously for compatibility
+        try:
+            asyncio.run(self.async_update())
+        except RuntimeError:
+            # Handle case where asyncio.run() can't be called (e.g., already in event loop)
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # Create a task if we're already in an event loop
+                loop.create_task(self.async_update())
+            else:
+                asyncio.run(self.async_update())
+
     async def async_update(self):
         """Update the sensor data using connection pooling."""
         try:
