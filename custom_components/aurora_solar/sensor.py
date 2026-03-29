@@ -58,7 +58,7 @@ class AuroraConnectionPool:
         self._last_used = 0
     
     async def get_connection(self):
-        """Get or create a connection with health check."""
+        """Get or create a connection with health check and proper timeout handling."""
         now = time.time()
         
         # Check if existing connection is still valid
@@ -71,17 +71,34 @@ class AuroraConnectionPool:
             except Exception:
                 await self._close_connection()
         
-        # Create new connection
-        async with self._lock:
-            if self._connection is None:
-                self._connection = AuroraTCPClient(
-                    ip=self.host,
-                    port=self.port,
-                    address=self.slave_id,
-                    timeout=self.timeout
-                )
-                self._connection.connect()
-                self._last_used = now
+        # Create new connection with proper lock handling and timeout
+        try:
+            # Use asyncio.wait_for with the lock context manager
+            async with asyncio.timeout(5.0):
+                async with self._lock:
+                    if self._connection is None:
+                        try:
+                            # Create connection with timeout
+                            self._connection = AuroraTCPClient(
+                                ip=self.host,
+                                port=self.port,
+                                address=self.slave_id,
+                                timeout=self.timeout
+                            )
+                            # Connect with timeout - use executor for blocking call
+                            loop = asyncio.get_event_loop()
+                            await loop.run_in_executor(
+                                None,
+                                lambda: self._connection.connect()
+                            )
+                            self._last_used = now
+                        except Exception as e:
+                            _LOGGER.error(f"Connection failed for {self.host}:{self.port} (slave {self.slave_id}): {e}")
+                            await self._close_connection()
+                            raise
+        except asyncio.TimeoutError:
+            _LOGGER.error(f"Timeout acquiring connection for {self.host}:{self.port} (slave {self.slave_id})")
+            raise
         
         return self._connection
     
@@ -111,6 +128,9 @@ def measure_with_retry(client, code, retries=2):
 
 class AuroraSensorBase(SensorEntity):
     """Base class for all ABB Aurora sensors."""
+    
+    # Class-level circuit breaker tracking
+    _circuit_breaker = {}  # {(host, port, slave_id): {'failures': int, 'last_failure': float}}
 
     def __init__(self, host, port, slave_id, name, sensor_type, unit, factor=1, precision=2, is_string=False, text_mapping=None, scan_interval=60):
         """Initialize the sensor."""
@@ -118,6 +138,7 @@ class AuroraSensorBase(SensorEntity):
         self._port = port
         self._slave_id = slave_id
         self._scan_interval = scan_interval
+        self._circuit_key = (host, port, slave_id)
         """self._name = f"{name} {sensor_type.split('_')[-1].title()}"""
         # Use the provided name (short name from config flow) + clean sensor type name
         # Extract the meaningful part of the sensor type and clean it up
@@ -217,11 +238,25 @@ class AuroraSensorBase(SensorEntity):
                 asyncio.run(self.async_update())
 
     async def async_update(self):
-        """Update the sensor data using connection pooling."""
+        """Update the sensor data using connection pooling with circuit breaker."""
+        # Check circuit breaker state
+        cb = self._circuit_breaker.setdefault(self._circuit_key, {'failures': 0, 'last_failure': 0})
+        
+        # If circuit is open, check if we should retry
+        if cb['failures'] >= 3:
+            if time.time() - cb['last_failure'] < 60:  # 1 minute cooldown
+                _LOGGER.warning(f"Circuit breaker open for {self._name}, skipping update")
+                self._state = None
+                return
+            else:
+                # Reset circuit breaker after cooldown
+                cb['failures'] = 0
+        
         try:
             # Use connection pool instead of creating new client each time
             pool = AuroraConnectionPool(self._host, self._port, self._slave_id)
             client = await pool.get_connection()
+=======
 
             if self._sensor_type == "DSP_GRID_POWER":
                 value = measure_with_retry(client, 3)
@@ -431,6 +466,14 @@ class AuroraSensorBase(SensorEntity):
         except Exception as e:
             self._state = None
             _LOGGER.error("Allgemeiner Fehler bei %s: %s", self._name, e)
+            
+            # Update circuit breaker state
+            cb = self._circuit_breaker.setdefault(self._circuit_key, {'failures': 0, 'last_failure': 0})
+            cb['failures'] += 1
+            cb['last_failure'] = time.time()
+            
+            if cb['failures'] >= 3:
+                _LOGGER.warning(f"Circuit breaker tripped for {self._name} after 3 consecutive failures")
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up ALL ABB Aurora sensors (legacy setup)."""
