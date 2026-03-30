@@ -111,6 +111,22 @@ class AuroraConnectionPool:
                 pass
             self._connection = None
 
+async def measure_with_retry_async(client, code, retries=2):
+    """Attempts to read a value with retries on timeout using async sleep."""
+    for attempt in range(retries + 1):
+        try:
+            value = client.measure(code)
+            if (abs(value) < 1e-30 and value != 0.0) or abs(value) > 1e10:
+                return None
+            return value
+        except AuroraError as e:
+            if "Reading Timeout" in str(e) and attempt < retries:
+                await asyncio.sleep(0.3)  # ← ASYNC SLEEP!
+                continue
+            return None
+    return None
+
+# Keep original for backward compatibility
 def measure_with_retry(client, code, retries=2):
     """Attempts to read a value with retries on timeout."""
     for attempt in range(retries + 1):
@@ -258,7 +274,7 @@ class AuroraSensorBase(SensorEntity):
             client = await pool.get_connection()
 
             if self._sensor_type == "DSP_GRID_POWER":
-                value = measure_with_retry(client, 3)
+                value = await measure_with_retry_async(client, 3)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_DAILY_ENERGY":
                 self._state = round(client.cumulated_energy(0), self._precision)
@@ -271,43 +287,43 @@ class AuroraSensorBase(SensorEntity):
             elif self._sensor_type == "DSP_TOTAL_ENERGY":
                 self._state = round(client.cumulated_energy(5), self._precision)
             elif self._sensor_type == "DSP_GRID_VOLTAGE":
-                value = measure_with_retry(client, 1)
+                value = await measure_with_retry_async(client, 1)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_GRID_CURRENT":
-                value = measure_with_retry(client, 2)
+                value = await measure_with_retry_async(client, 2)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_GRID_FREQUENCY":
-                value = measure_with_retry(client, 4)
+                value = await measure_with_retry_async(client, 4)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_PF":
-                value = measure_with_retry(client, 9)
+                value = await measure_with_retry_async(client, 9)
                 self._state = round(value * 0.01, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_DC_VOLTAGE":
-                value = measure_with_retry(client, 23)
+                value = await measure_with_retry_async(client, 23)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_DC_CURRENT":
-                value = measure_with_retry(client, 25)
+                value = await measure_with_retry_async(client, 25)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_DC_POWER":
-                value = measure_with_retry(client, 12)
+                value = await measure_with_retry_async(client, 12)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_TEMPERATURE":
-                value = measure_with_retry(client, 21)
+                value = await measure_with_retry_async(client, 21)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_RADIATOR_TEMP":
-                value = measure_with_retry(client, 22)
+                value = await measure_with_retry_async(client, 22)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_AMBIENT_TEMP":
-                value = measure_with_retry(client, 15)
+                value = await measure_with_retry_async(client, 15)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_MPPT_POWER":
-                value = measure_with_retry(client, 16)
+                value = await measure_with_retry_async(client, 16)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_ISOLATION":
-                value = measure_with_retry(client, 30)
+                value = await measure_with_retry_async(client, 30)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_OPERATING_HOURS":
-                value = measure_with_retry(client, 18)
+                value = await measure_with_retry_async(client, 18)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_SERIAL_NUMBER":
                 self._state = client.serial_number()
@@ -316,145 +332,145 @@ class AuroraSensorBase(SensorEntity):
             elif self._sensor_type == "DSP_MODEL":
                 self._state = client.version()
             elif self._sensor_type == "DSP_EVENTS":
-                events = measure_with_retry(client, 21)
+                events = await measure_with_retry_async(client, 21)
                 self._state = events
             elif self._sensor_type == "DSP_LAST_ERROR":
-                last_error = measure_with_retry(client, 22)
+                last_error = await measure_with_retry_async(client, 22)
                 self._state = last_error
             elif self._sensor_type == "DSP_ALARMS":
-                alarms = measure_with_retry(client, 19)
+                alarms = await measure_with_retry_async(client, 19)
                 self._state = self._text_mapping.get(int(alarms), "Unbekannt") if alarms is not None else "Unbekannt"
             elif self._sensor_type == "DSP_FAULT_CODE":
-                fault = measure_with_retry(client, 20)
+                fault = await measure_with_retry_async(client, 20)
                 self._state = self._text_mapping.get(int(fault), "Unbekannt") if fault is not None else "Unbekannt"
             elif self._sensor_type == "DSP_STATUS":
-                status = measure_with_retry(client, 23)
+                status = await measure_with_retry_async(client, 23)
                 self._state = self._text_mapping.get(int(status), "Unbekannt") if status is not None else "Unbekannt"
             elif self._sensor_type == "DSP_INPUT_2_VOLTAGE":
-                value = measure_with_retry(client, 26)
+                value = await measure_with_retry_async(client, 26)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_INPUT_2_CURRENT":
-                value = measure_with_retry(client, 27)
+                value = await measure_with_retry_async(client, 27)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_VBULK":
-                value = measure_with_retry(client, 5)
+                value = await measure_with_retry_async(client, 5)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_ILEAK_DC_DC":
-                value = measure_with_retry(client, 6)
+                value = await measure_with_retry_async(client, 6)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_ILEAK_INVERTER":
-                value = measure_with_retry(client, 7)
+                value = await measure_with_retry_async(client, 7)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_PIN1":
-                value = measure_with_retry(client, 8)
+                value = await measure_with_retry_async(client, 8)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_PIN2":
-                value = measure_with_retry(client, 9)
+                value = await measure_with_retry_async(client, 9)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_GRID_VOLTAGE_DC_DC":
-                value = measure_with_retry(client, 28)
+                value = await measure_with_retry_async(client, 28)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_GRID_FREQUENCY_DC_DC":
-                value = measure_with_retry(client, 29)
+                value = await measure_with_retry_async(client, 29)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_VBULK_DC_DC":
-                value = measure_with_retry(client, 31)
+                value = await measure_with_retry_async(client, 31)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_AVERAGE_GRID_VOLTAGE":
-                value = measure_with_retry(client, 32)
+                value = await measure_with_retry_async(client, 32)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_VBULK_MID":
-                value = measure_with_retry(client, 33)
+                value = await measure_with_retry_async(client, 33)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_POWER_PEAK":
-                value = measure_with_retry(client, 34)
+                value = await measure_with_retry_async(client, 34)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_POWER_PEAK_TODAY":
-                value = measure_with_retry(client, 35)
+                value = await measure_with_retry_async(client, 35)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_GRID_VOLTAGE_NEUTRAL":
-                value = measure_with_retry(client, 36)
+                value = await measure_with_retry_async(client, 36)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_WIND_GENERATOR_FREQUENCY":
-                value = measure_with_retry(client, 37)
+                value = await measure_with_retry_async(client, 37)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_GRID_VOLTAGE_NEUTRAL_PHASE":
-                value = measure_with_retry(client, 38)
+                value = await measure_with_retry_async(client, 38)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_GRID_CURRENT_PHASE_R":
-                value = measure_with_retry(client, 39)
+                value = await measure_with_retry_async(client, 39)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_GRID_CURRENT_PHASE_S":
-                value = measure_with_retry(client, 40)
+                value = await measure_with_retry_async(client, 40)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_GRID_CURRENT_PHASE_T":
-                value = measure_with_retry(client, 41)
+                value = await measure_with_retry_async(client, 41)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_FREQUENCY_PHASE_R":
-                value = measure_with_retry(client, 42)
+                value = await measure_with_retry_async(client, 42)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_FREQUENCY_PHASE_S":
-                value = measure_with_retry(client, 43)
+                value = await measure_with_retry_async(client, 43)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_FREQUENCY_PHASE_T":
-                value = measure_with_retry(client, 44)
+                value = await measure_with_retry_async(client, 44)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_VBULK_PLUS":
-                value = measure_with_retry(client, 45)
+                value = await measure_with_retry_async(client, 45)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_VBULK_MINUS":
-                value = measure_with_retry(client, 46)
+                value = await measure_with_retry_async(client, 46)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_SUPERVISOR_TEMPERATURE":
-                value = measure_with_retry(client, 47)
+                value = await measure_with_retry_async(client, 47)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_ALIM_TEMPERATURE":
-                value = measure_with_retry(client, 48)
+                value = await measure_with_retry_async(client, 48)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_HEAT_SINK_TEMPERATURE":
-                value = measure_with_retry(client, 49)
+                value = await measure_with_retry_async(client, 49)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_TEMPERATURE_1":
-                value = measure_with_retry(client, 50)
+                value = await measure_with_retry_async(client, 50)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_TEMPERATURE_2":
-                value = measure_with_retry(client, 51)
+                value = await measure_with_retry_async(client, 51)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_TEMPERATURE_3":
-                value = measure_with_retry(client, 52)
+                value = await measure_with_retry_async(client, 52)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_FAN_1_SPEED":
-                value = measure_with_retry(client, 53)
+                value = await measure_with_retry_async(client, 53)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_FAN_2_SPEED":
-                value = measure_with_retry(client, 54)
+                value = await measure_with_retry_async(client, 54)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_FAN_3_SPEED":
-                value = measure_with_retry(client, 55)
+                value = await measure_with_retry_async(client, 55)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_FAN_4_SPEED":
-                value = measure_with_retry(client, 56)
+                value = await measure_with_retry_async(client, 56)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_FAN_5_SPEED":
-                value = measure_with_retry(client, 57)
+                value = await measure_with_retry_async(client, 57)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_POWER_SATURATION_LIMIT":
-                value = measure_with_retry(client, 58)
+                value = await measure_with_retry_async(client, 58)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_RIFERIMENTO_ANELLO_BULK":
-                value = measure_with_retry(client, 59)
+                value = await measure_with_retry_async(client, 59)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_VPANEL_MICRO":
-                value = measure_with_retry(client, 60)
+                value = await measure_with_retry_async(client, 60)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_GRID_VOLTAGE_PHASE_R":
-                value = measure_with_retry(client, 61)
+                value = await measure_with_retry_async(client, 61)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_GRID_VOLTAGE_PHASE_S":
-                value = measure_with_retry(client, 62)
+                value = await measure_with_retry_async(client, 62)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
             elif self._sensor_type == "DSP_GRID_VOLTAGE_PHASE_T":
-                value = measure_with_retry(client, 63)
+                value = await measure_with_retry_async(client, 63)
                 self._state = round(value * self._factor, self._precision) if value is not None else None
 
             # Note: We don't close the connection here since it's managed by the pool
