@@ -533,3 +533,8 @@ def test_sensors():
     
     # Print execution time
     execution_time = time.time() - START_TIME
+    print(f"\nExecution time: {execution_time:.2f} seconds")
+    print("="*80 + "\n")
+
+if __name__ == "__main__":
+    test_sensors()
