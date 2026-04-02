@@ -1,0 +1,32 @@
+{
+  "title": "ABB Aurora Solar Inverter",
+  "description": "Integration for ABB Aurora solar inverters via TCP",
+  "config": {
+    "step": {
+      "user": {
+        "description": "Enter the connection details for your ABB Aurora inverter. Host and port cannot be changed later — to use a different inverter, remove and re-add the integration.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "slave_id": "Slave ID",
+          "name": "Name (short, e.g., 'Inverter 1')",
+          "scan_interval": "Scan Interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect. Check host, port and slave ID.",
+      "unknown": "Unexpected error. Check the HA logs for details."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "slave_id": "Slave ID",
+          "scan_interval": "Scan Interval (seconds)"
+        }
+      }
+    }
+  }
+}

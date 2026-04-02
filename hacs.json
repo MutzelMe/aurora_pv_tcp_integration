@@ -1,0 +1,6 @@
+{
+  "name": "Aurora PV TCP Integration",
+  "render_readme": true,
+  "homeassistant": "2025.11.0",
+  "content_in_root": false
+}
